@@ -1,8 +1,9 @@
 // ── Monde ────────────────────────────────────────────────────────────────────
-export const TILE = 44; // pixels par tuile
+export const TILE = 52; // pixels par tuile
 export const WORLD_W = 32; // largeur du monde en tuiles
 export const SPAWN_X = 28;
 export const SKY_LIMIT = -9; // altitude max de vol (en tuiles)
+export const DAY_CYCLE = 240; // durée d'un cycle jour+nuit complet (secondes)
 
 export type OreId =
   | 'coal'

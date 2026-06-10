@@ -37,6 +37,7 @@ interface Snap {
   hull: number;
   teleporters: number;
   dynamites: number;
+  day: number;
   ui: string;
   coal: number;
 }
@@ -54,6 +55,7 @@ const snap = (): Promise<Snap> =>
       hull: s.hull,
       teleporters: s.teleporters,
       dynamites: s.dynamites,
+      day: s.day,
       ui: s.ui,
       coal: s.cargo.coal ?? 0,
     };
@@ -80,6 +82,12 @@ await page.waitForTimeout(500);
 
 let s = await snap();
 check(s.fuel > 98 && s.money === 0 && s.depth === 0, 'partie fraîche (~100 L, 0 $, 0 m)');
+check(s.day === 1, `la partie commence au jour 1 (jour ${s.day})`);
+// le compteur passe au jour 2 après un cycle complet (240 s)
+await page.evaluate(() => { (window as any).__engine.time = 245; });
+await page.waitForTimeout(250);
+check((await snap()).day === 2, 'jour 2 après un cycle complet');
+await page.evaluate(() => { (window as any).__engine.time = 30; });
 await page.screenshot({ path: '/tmp/drill-1-surface.png' });
 
 // à l'arrêt, aucune consommation d'essence

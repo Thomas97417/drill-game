@@ -2,6 +2,7 @@ import {
   BUILDINGS,
   BURN_FLY,
   BURN_MOVE,
+  DAY_CYCLE,
   DYNAMITE_DMG,
   DYNAMITE_FUSE,
   DYNAMITE_RADIUS,
@@ -26,6 +27,7 @@ import {
 } from './constants';
 import { Input } from './input';
 import { World } from './world';
+import { initTileAtlas } from './tileart';
 import { clearSave, loadSave, saveNow } from './save';
 import { useGameStore } from '../store';
 import { render } from './render';
@@ -69,6 +71,14 @@ export interface Particle {
   life: number;
   maxLife: number;
   color: string;
+  size?: number; // px à l'écran (4 par défaut)
+  g?: number; // multiplicateur de gravité (0.6 par défaut, négatif = monte)
+}
+
+export interface Flash {
+  x: number;
+  y: number;
+  age: number;
 }
 
 function makePlayer(pos?: { x: number; y: number }): Player {
@@ -96,6 +106,7 @@ export class Engine {
   digging: DigState | null = null;
   particles: Particle[] = [];
   dynamites: Dynamite[] = [];
+  flashes: Flash[] = [];
   camX = 0;
   camY = 0;
   viewW = 800; // px CSS
@@ -107,14 +118,17 @@ export class Engine {
   private acc = 0;
   private saveTimer = 0;
   private digPartTimer = 0;
+  private smokeTimer = 0;
   private wasPaused = false;
 
   constructor(canvas: HTMLCanvasElement) {
     this.canvas = canvas;
     this.ctx = canvas.getContext('2d')!;
+    initTileAtlas();
     const saved = loadSave();
     this.world = new World(saved?.seed ?? newSeed(), saved?.dug);
     this.player = makePlayer(saved?.player);
+    this.time = saved?.time ?? 0;
     this.snapCamera();
   }
 
@@ -264,6 +278,26 @@ export class Engine {
       p.vy = Math.max(0, p.vy);
     }
 
+    // fumée d'échappement quand le moteur travaille
+    if (Math.abs(p.vx) > 0.1 || p.flying || this.digging) {
+      this.smokeTimer -= dt;
+      if (this.smokeTimer <= 0) {
+        this.smokeTimer = 0.16;
+        const exs = p.facing > 0 ? p.x + p.w * 0.12 : p.x + p.w * 0.82;
+        this.particles.push({
+          x: exs,
+          y: p.y - 0.1,
+          vx: (Math.random() - 0.5) * 0.6 - p.vx * 0.15,
+          vy: -0.8 - Math.random() * 0.6,
+          life: 0.7,
+          maxLife: 0.7,
+          color: 'rgba(120,120,130,0.6)',
+          size: 5 + Math.random() * 3,
+          g: -0.05,
+        });
+      }
+    }
+
     // ── Dynamites : chute, mèche, explosion ──────────────────────────────────
     const blastDmg = this.updateDynamites(dt);
     if (blastDmg > 0) {
@@ -289,7 +323,8 @@ export class Engine {
       nearBuilding = b?.id ?? null;
     }
 
-    useGameStore.setState({ fuel, hull, depth, maxDepth, nearBuilding });
+    const day = Math.floor(this.time / DAY_CYCLE) + 1;
+    useGameStore.setState({ fuel, hull, depth, maxDepth, nearBuilding, day });
 
     if (nearBuilding && this.input.consume('interact')) store.openShop(nearBuilding);
 
@@ -428,9 +463,11 @@ export class Engine {
     clearSave();
     this.world = new World(newSeed());
     this.player = makePlayer();
+    this.time = 0;
     this.digging = null;
     this.particles = [];
     this.dynamites = [];
+    this.flashes = [];
     this.snapCamera();
   }
 
@@ -473,6 +510,7 @@ export class Engine {
     }
     this.emitBurst(d.x, d.y, '#ff9f43', 24);
     this.emitBurst(d.x, d.y, '#8d93a1', 14);
+    this.flashes.push({ x: d.x, y: d.y, age: 0 });
     this.digging = null; // le terrain a pu changer sous la foreuse
     const p = this.player;
     const dist = Math.hypot(p.x + p.w / 2 - d.x, p.y + p.h / 2 - d.y);
@@ -493,6 +531,7 @@ export class Engine {
       teleporters: s.teleporters,
       dynamites: s.dynamites,
       maxDepth: s.maxDepth,
+      time: this.time,
       player: { x: this.player.x, y: this.player.y },
     });
   }
@@ -516,6 +555,7 @@ export class Engine {
         life: 0.5,
         maxLife: 0.5,
         color,
+        size: 3 + Math.random() * 3,
       });
     }
   }
@@ -532,6 +572,7 @@ export class Engine {
         life: 0.6,
         maxLife: 0.6,
         color,
+        size: 3 + Math.random() * 4,
       });
     }
   }
@@ -540,10 +581,12 @@ export class Engine {
     for (const pt of this.particles) {
       pt.x += pt.vx * dt;
       pt.y += pt.vy * dt;
-      pt.vy += GRAVITY * 0.6 * dt;
+      pt.vy += GRAVITY * (pt.g ?? 0.6) * dt;
       pt.life -= dt;
     }
     this.particles = this.particles.filter((pt) => pt.life > 0);
+    for (const f of this.flashes) f.age += dt;
+    this.flashes = this.flashes.filter((f) => f.age < 0.45);
   }
 }
 

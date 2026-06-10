@@ -1,0 +1,335 @@
+// Atlas de sprites de tuiles : chaque matériau est pré-peint en pixel-art
+// détaillé (4 variantes) dans un canvas hors écran au démarrage, puis copié
+// par drawImage à chaque frame — beaucoup plus riche ET moins cher que de
+// redessiner les motifs en direct.
+import { ORE_IDS, TILE, type TileKind } from './constants';
+import { hash2D, mulberry32 } from './rng';
+
+const VARIANTS = 4;
+const KINDS: TileKind[] = ['dirt', 'rock', 'hardrock', 'bedrock', 'foundation', 'boulder', ...ORE_IDS];
+const P = 4; // taille du « gros pixel »
+const G = Math.ceil(TILE / P); // cellules par côté
+
+let atlas: HTMLCanvasElement | null = null;
+const rowOf = new Map<TileKind, number>();
+
+type Rng = () => number;
+
+export function initTileAtlas() {
+  if (atlas) return;
+  atlas = document.createElement('canvas');
+  atlas.width = VARIANTS * TILE;
+  atlas.height = KINDS.length * TILE;
+  const ctx = atlas.getContext('2d')!;
+  KINDS.forEach((kind, row) => {
+    rowOf.set(kind, row);
+    for (let v = 0; v < VARIANTS; v++) {
+      const rng = mulberry32((row * 131 + v * 7919 + 42) >>> 0);
+      ctx.save();
+      ctx.translate(v * TILE, row * TILE);
+      ctx.beginPath();
+      ctx.rect(0, 0, TILE, TILE);
+      ctx.clip();
+      paintTile(ctx, kind, rng);
+      ctx.restore();
+    }
+  });
+}
+
+export function drawTileSprite(
+  ctx: CanvasRenderingContext2D,
+  kind: TileKind,
+  x: number,
+  y: number,
+  px: number,
+  py: number,
+) {
+  const row = rowOf.get(kind);
+  if (atlas === null || row === undefined) return;
+  const v = Math.floor(hash2D(x, y, 777) * VARIANTS);
+  ctx.drawImage(atlas, v * TILE, row * TILE, TILE, TILE, px, py, TILE, TILE);
+}
+
+// ── Peinture des matériaux ───────────────────────────────────────────────────
+
+function paintTile(ctx: CanvasRenderingContext2D, kind: TileKind, rng: Rng) {
+  switch (kind) {
+    case 'dirt':
+      paintDirt(ctx, rng);
+      break;
+    case 'rock':
+      paintRock(ctx, rng, ['#565660', '#6f6f79', '#7d7d88', '#8b8b96'], 4);
+      break;
+    case 'hardrock':
+      paintRock(ctx, rng, ['#33333c', '#46464f', '#52525c', '#5e5e69'], 6);
+      break;
+    case 'bedrock':
+      paintBedrock(ctx, rng);
+      break;
+    case 'foundation':
+      paintFoundation(ctx, rng);
+      break;
+    case 'boulder':
+      paintBoulder(ctx, rng);
+      break;
+    case 'coal':
+      paintDirt(ctx, rng);
+      paintCoal(ctx, rng);
+      break;
+    case 'iron':
+      paintDirt(ctx, rng);
+      paintIron(ctx, rng);
+      break;
+    case 'silver':
+      paintRock(ctx, rng, ['#565660', '#6f6f79', '#7d7d88', '#8b8b96'], 3);
+      paintVeins(ctx, rng, '#dde2ec', '#a9b2c4', '#ffffff');
+      break;
+    case 'gold':
+      paintRock(ctx, rng, ['#565660', '#6f6f79', '#7d7d88', '#8b8b96'], 3);
+      paintNuggets(ctx, rng, '#f6c945', '#b8860b', '#fff3b0');
+      break;
+    case 'ruby':
+      paintRock(ctx, rng, ['#33333c', '#46464f', '#52525c', '#5e5e69'], 4);
+      paintCrystals(ctx, rng, '#ef3b58', '#a31432', '#ff9ab0');
+      break;
+    case 'emerald':
+      paintRock(ctx, rng, ['#33333c', '#46464f', '#52525c', '#5e5e69'], 4);
+      paintCrystals(ctx, rng, '#31d178', '#157a44', '#a8f5cd');
+      break;
+    case 'diamond':
+      paintRock(ctx, rng, ['#26262e', '#383841', '#44444e', '#50505b'], 4);
+      paintCrystals(ctx, rng, '#8deef7', '#3aa8b8', '#e8fdff');
+      break;
+    default:
+      break;
+  }
+}
+
+// gros pixel sur la grille
+function cell(ctx: CanvasRenderingContext2D, cx: number, cy: number, color: string) {
+  ctx.fillStyle = color;
+  ctx.fillRect(cx * P, cy * P, P, P);
+}
+
+// remplit la tuile d'un bruit pondéré de tons
+function noiseFill(ctx: CanvasRenderingContext2D, rng: Rng, tones: string[], weights: number[]) {
+  for (let cy = 0; cy < G; cy++) {
+    for (let cx = 0; cx < G; cx++) {
+      const r = rng();
+      let acc = 0;
+      let tone = tones[tones.length - 1];
+      for (let i = 0; i < tones.length; i++) {
+        acc += weights[i];
+        if (r < acc) {
+          tone = tones[i];
+          break;
+        }
+      }
+      cell(ctx, cx, cy, tone);
+    }
+  }
+}
+
+// ── Terre : bruns chauds, cailloux, racines ──────────────────────────────────
+
+function paintDirt(ctx: CanvasRenderingContext2D, rng: Rng) {
+  noiseFill(ctx, rng, ['#5e3d1a', '#6e4a20', '#82592a', '#916834'], [0.18, 0.34, 0.32, 0.16]);
+  // petits cailloux
+  for (let i = 0; i < 3; i++) {
+    const cx = 1 + Math.floor(rng() * (G - 3));
+    const cy = 1 + Math.floor(rng() * (G - 3));
+    cell(ctx, cx, cy, '#4a3014');
+    cell(ctx, cx + 1, cy, '#9a7a4a');
+    cell(ctx, cx, cy + 1, '#3d2810');
+  }
+  // racine sinueuse occasionnelle
+  if (rng() < 0.5) {
+    let cx = Math.floor(rng() * G);
+    ctx.fillStyle = 'rgba(70,48,22,0.6)';
+    for (let cy = 0; cy < G; cy += 1) {
+      ctx.fillRect(Math.max(0, Math.min(G - 1, cx)) * P, cy * P, P, P);
+      if (rng() < 0.4) cx += rng() < 0.5 ? -1 : 1;
+    }
+  }
+}
+
+// ── Roche : facettes et fissures ─────────────────────────────────────────────
+
+function paintRock(ctx: CanvasRenderingContext2D, rng: Rng, tones: string[], cracks: number) {
+  noiseFill(ctx, rng, tones, [0.2, 0.36, 0.3, 0.14]);
+  // facettes claires (patchs anguleux)
+  for (let i = 0; i < 2; i++) {
+    const fx = Math.floor(rng() * (G - 4));
+    const fy = Math.floor(rng() * (G - 4));
+    const fw = 2 + Math.floor(rng() * 3);
+    for (let dy = 0; dy < fw; dy++)
+      for (let dx = 0; dx < fw - dy; dx++) cell(ctx, fx + dx, fy + dy, tones[3]);
+  }
+  // fissures sombres
+  ctx.strokeStyle = 'rgba(10,10,14,0.55)';
+  ctx.lineWidth = 2;
+  for (let i = 0; i < cracks; i++) {
+    const x0 = rng() * TILE;
+    const y0 = rng() * TILE;
+    ctx.beginPath();
+    ctx.moveTo(x0, y0);
+    ctx.lineTo(x0 + (rng() - 0.5) * TILE * 0.5, y0 + (rng() - 0.3) * TILE * 0.5);
+    ctx.stroke();
+  }
+}
+
+// ── Roche-mère : strates denses ──────────────────────────────────────────────
+
+function paintBedrock(ctx: CanvasRenderingContext2D, rng: Rng) {
+  noiseFill(ctx, rng, ['#15151a', '#1d1d24', '#25252d', '#2d2d36'], [0.3, 0.34, 0.24, 0.12]);
+  ctx.fillStyle = 'rgba(0,0,0,0.45)';
+  for (let i = 0; i < 3; i++) {
+    const y = Math.floor(rng() * G);
+    ctx.fillRect(0, y * P, TILE, 2);
+  }
+}
+
+// ── Fondations : béton, joints, boulons ──────────────────────────────────────
+
+function paintFoundation(ctx: CanvasRenderingContext2D, rng: Rng) {
+  noiseFill(ctx, rng, ['#7d848c', '#8d949c', '#99a0a8', '#a6acb3'], [0.2, 0.36, 0.3, 0.14]);
+  // joints
+  ctx.fillStyle = 'rgba(40,45,52,0.6)';
+  ctx.fillRect(0, Math.floor(G / 2) * P, TILE, 2);
+  ctx.fillRect(Math.floor(G / 2) * P, 0, 2, Math.floor(G / 2) * P);
+  ctx.fillRect(Math.floor(G / 4) * P, Math.floor(G / 2) * P, 2, TILE);
+  // boulons
+  for (const [bx, by] of [
+    [1, 1],
+    [G - 2, 1],
+    [1, G - 2],
+    [G - 2, G - 2],
+  ]) {
+    cell(ctx, bx, by, '#5b6168');
+    ctx.fillStyle = '#c2c8ce';
+    ctx.fillRect(bx * P + 1, by * P + 1, 2, 2);
+  }
+}
+
+// ── Rocher : galet massif ombré sur fond sombre ──────────────────────────────
+
+function paintBoulder(ctx: CanvasRenderingContext2D, rng: Rng) {
+  // fond de cavité
+  noiseFill(ctx, rng, ['#1d1209', '#241910', '#2b1e13'], [0.4, 0.4, 0.2]);
+  const cx0 = G / 2;
+  const cy0 = G / 2 + 0.5;
+  const rx = G * 0.46;
+  const ry = G * 0.42;
+  for (let cy = 0; cy < G; cy++) {
+    for (let cx = 0; cx < G; cx++) {
+      const dx = (cx + 0.5 - cx0) / rx;
+      const dy = (cy + 0.5 - cy0) / ry;
+      const d = dx * dx + dy * dy;
+      if (d > 1) continue;
+      // éclairage haut-gauche → ombre bas-droite
+      const lit = -dx * 0.5 - dy * 0.7 + rng() * 0.25;
+      const tone = lit > 0.35 ? '#8a8174' : lit > 0 ? '#6b6258' : d > 0.6 ? '#453d33' : '#564e43';
+      cell(ctx, cx, cy, tone);
+    }
+  }
+  // fissures du galet
+  ctx.strokeStyle = 'rgba(20,15,10,0.6)';
+  ctx.lineWidth = 2;
+  for (let i = 0; i < 2; i++) {
+    ctx.beginPath();
+    ctx.moveTo(TILE * (0.3 + rng() * 0.3), TILE * (0.25 + rng() * 0.2));
+    ctx.lineTo(TILE * (0.4 + rng() * 0.3), TILE * (0.5 + rng() * 0.3));
+    ctx.stroke();
+  }
+}
+
+// ── Minerais ─────────────────────────────────────────────────────────────────
+
+function paintCoal(ctx: CanvasRenderingContext2D, rng: Rng) {
+  for (let i = 0; i < 4; i++) {
+    const cx = 1 + Math.floor(rng() * (G - 4));
+    const cy = 1 + Math.floor(rng() * (G - 4));
+    const s = 2 + Math.floor(rng() * 2);
+    for (let dy = 0; dy < s; dy++)
+      for (let dx = 0; dx < s - (dy > 1 ? 1 : 0); dx++) cell(ctx, cx + dx, cy + dy, '#1c1c22');
+    cell(ctx, cx, cy, '#3a3a44'); // reflet mat
+    cell(ctx, cx + s - 1, cy + s - 1, '#0d0d11'); // ombre
+  }
+}
+
+function paintIron(ctx: CanvasRenderingContext2D, rng: Rng) {
+  // bandes rouillées
+  for (let i = 0; i < 3; i++) {
+    let cx = Math.floor(rng() * (G - 5));
+    let cy = 2 + Math.floor(rng() * (G - 4));
+    for (let s = 0; s < 4; s++) {
+      cell(ctx, cx, cy, '#b3713e');
+      cell(ctx, cx, cy - 1, '#d28b54');
+      cell(ctx, cx + 1, cy, '#8a5026');
+      cx += 1;
+      if (rng() < 0.5) cy += rng() < 0.5 ? -1 : 1;
+    }
+  }
+}
+
+function paintVeins(ctx: CanvasRenderingContext2D, rng: Rng, mid: string, dark: string, light: string) {
+  for (let i = 0; i < 3; i++) {
+    let cx = Math.floor(rng() * (G - 5));
+    let cy = Math.floor(rng() * (G - 2));
+    for (let s = 0; s < 5; s++) {
+      cell(ctx, cx, cy, mid);
+      if (rng() < 0.5) cell(ctx, cx, cy + 1, dark);
+      cx += 1;
+      cy += rng() < 0.6 ? 1 : 0;
+      if (cx >= G || cy >= G) break;
+    }
+    ctx.fillStyle = light;
+    ctx.fillRect(Math.min(G - 1, cx - 3) * P + 1, Math.max(0, cy - 2) * P + 1, 2, 2);
+  }
+}
+
+function paintNuggets(ctx: CanvasRenderingContext2D, rng: Rng, mid: string, dark: string, light: string) {
+  for (let i = 0; i < 4; i++) {
+    const cx = 1 + Math.floor(rng() * (G - 3));
+    const cy = 1 + Math.floor(rng() * (G - 3));
+    cell(ctx, cx, cy, mid);
+    cell(ctx, cx + 1, cy, mid);
+    cell(ctx, cx, cy + 1, dark);
+    cell(ctx, cx + 1, cy + 1, dark);
+    ctx.fillStyle = light;
+    ctx.fillRect(cx * P + 1, cy * P + 1, 2, 2);
+  }
+}
+
+function paintCrystals(ctx: CanvasRenderingContext2D, rng: Rng, mid: string, dark: string, light: string) {
+  for (let i = 0; i < 3; i++) {
+    const x = (2 + rng() * (G - 6)) * P;
+    const y = (2.5 + rng() * (G - 6)) * P;
+    const r = (1.6 + rng() * 1.2) * P;
+    // ombre portée
+    ctx.fillStyle = 'rgba(0,0,0,0.4)';
+    ctx.beginPath();
+    ctx.ellipse(x + 2, y + r * 0.8, r * 0.9, r * 0.35, 0, 0, Math.PI * 2);
+    ctx.fill();
+    // facette sombre (droite)
+    ctx.fillStyle = dark;
+    ctx.beginPath();
+    ctx.moveTo(x, y - r);
+    ctx.lineTo(x + r * 0.8, y);
+    ctx.lineTo(x, y + r * 0.8);
+    ctx.closePath();
+    ctx.fill();
+    // facette claire (gauche)
+    ctx.fillStyle = mid;
+    ctx.beginPath();
+    ctx.moveTo(x, y - r);
+    ctx.lineTo(x - r * 0.8, y);
+    ctx.lineTo(x, y + r * 0.8);
+    ctx.closePath();
+    ctx.fill();
+    // arête + spéculaire
+    ctx.fillStyle = light;
+    ctx.fillRect(x - 1, y - r, 2, r * 1.7);
+    ctx.fillRect(x - r * 0.45, y - r * 0.3, 3, 3);
+  }
+}

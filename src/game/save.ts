@@ -11,6 +11,7 @@ export interface SaveData {
   teleporters: number;
   dynamites: number;
   maxDepth: number;
+  time: number; // horloge de jeu (cycle jour/nuit, compteur de jours)
   player: { x: number; y: number };
 }
 

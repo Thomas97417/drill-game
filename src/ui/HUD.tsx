@@ -34,6 +34,7 @@ export function HUD() {
   const money = useGameStore((s) => s.money);
   const depth = useGameStore((s) => s.depth);
   const maxDepth = useGameStore((s) => s.maxDepth);
+  const day = useGameStore((s) => s.day);
   const cargo = useGameStore((s) => s.cargo);
   const upgrades = useGameStore((s) => s.upgrades);
   const teleporters = useGameStore((s) => s.teleporters);
@@ -66,6 +67,7 @@ export function HUD() {
 
       <div className="hud-top-right panel">
         <div className="money">{fmt(money)} $</div>
+        <div className="depth">☀ Jour {day}</div>
         <div className="depth">
           Profondeur : {depth} m <span className="dim">(max {maxDepth} m)</span>
         </div>

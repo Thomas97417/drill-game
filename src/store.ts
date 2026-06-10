@@ -36,6 +36,7 @@ interface GameStore {
   dynamites: number;
   depth: number;
   maxDepth: number;
+  day: number;
   nearBuilding: BuildingId | null;
   ui: UiMode;
   rescueReason: 'fuel' | 'hull';
@@ -82,6 +83,7 @@ const freshState = () => ({
   dynamites: 0,
   depth: 0,
   maxDepth: 0,
+  day: 1,
   nearBuilding: null as BuildingId | null,
   ui: 'playing' as UiMode,
   rescueReason: 'fuel' as const,
