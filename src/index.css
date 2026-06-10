@@ -1,0 +1,346 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  background: #0d0805;
+  overflow: hidden;
+  font-family: ui-monospace, 'Cascadia Code', Menlo, Consolas, monospace;
+  user-select: none;
+  color: #e8e6e3;
+}
+
+.game-canvas {
+  display: block;
+  position: fixed;
+  inset: 0;
+}
+
+/* ── HUD ────────────────────────────────────────────────────────────────── */
+
+.hud {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+}
+
+.hud > * {
+  position: absolute;
+}
+
+.panel {
+  background: rgba(15, 17, 24, 0.82);
+  border: 2px solid rgba(0, 0, 0, 0.6);
+  border-radius: 8px;
+  padding: 10px 12px;
+}
+
+.hud-top-left {
+  top: 12px;
+  left: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.hud-top-right {
+  top: 12px;
+  right: 12px;
+  text-align: right;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  align-items: flex-end;
+  pointer-events: auto;
+}
+
+.hud-bottom-center {
+  bottom: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  pointer-events: auto;
+}
+
+.hud-bottom-right {
+  bottom: 12px;
+  right: 12px;
+  pointer-events: auto;
+}
+
+.hud-bottom-left {
+  bottom: 12px;
+  left: 12px;
+  font-size: 12px;
+  text-shadow: 0 1px 2px #000;
+}
+
+.bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.bar-label {
+  width: 22px;
+  text-align: center;
+}
+
+.bar-outer {
+  position: relative;
+  width: 170px;
+  height: 18px;
+  background: rgba(0, 0, 0, 0.55);
+  border: 1px solid #000;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.bar-inner {
+  height: 100%;
+  transition: width 0.15s linear;
+}
+
+.bar-text {
+  position: absolute;
+  inset: 0;
+  font-size: 11px;
+  line-height: 17px;
+  text-align: center;
+  color: #fff;
+  text-shadow: 0 1px 2px #000;
+}
+
+.money {
+  font-size: 20px;
+  font-weight: bold;
+  color: #ffd54f;
+  text-shadow: 0 1px 2px #000;
+}
+
+.depth {
+  font-size: 13px;
+}
+
+.dim {
+  opacity: 0.6;
+}
+
+.cargo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 13px;
+  max-width: 80vw;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.cargo-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.cargo-dot {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  margin-right: 4px;
+}
+
+.cargo-total {
+  font-weight: bold;
+  color: #ffd54f;
+}
+
+/* ── Boutons ────────────────────────────────────────────────────────────── */
+
+.btn {
+  pointer-events: auto;
+  font-family: inherit;
+  font-size: 14px;
+  color: #e8e6e3;
+  background: #2b2f3d;
+  border: 2px solid #000;
+  border-radius: 6px;
+  padding: 8px 14px;
+  cursor: pointer;
+  box-shadow: 0 2px 0 #000;
+}
+
+.btn:hover:not(:disabled) {
+  background: #3a4054;
+}
+
+.btn:active:not(:disabled) {
+  transform: translateY(2px);
+  box-shadow: none;
+}
+
+.btn:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.btn-primary {
+  background: #1f7a3d;
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: #27964c;
+}
+
+.btn-small {
+  font-size: 12px;
+  padding: 4px 8px;
+}
+
+.btn-shop {
+  background: #b8860b;
+  font-weight: bold;
+  animation: pulse 1.2s infinite;
+}
+
+@keyframes pulse {
+  50% {
+    transform: scale(1.05);
+  }
+}
+
+.btn-row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin: 10px 0;
+}
+
+/* ── Modales ────────────────────────────────────────────────────────────── */
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+}
+
+.modal {
+  background: #1d1f27;
+  border: 3px solid #000;
+  border-radius: 10px;
+  padding: 20px;
+  width: min(560px, 92vw);
+  max-height: 86vh;
+  overflow-y: auto;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.6);
+}
+
+.modal h2 {
+  margin-bottom: 8px;
+}
+
+.modal p {
+  margin: 8px 0;
+  line-height: 1.45;
+}
+
+.modal hr {
+  border: none;
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
+  margin: 14px 0;
+}
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.rescue {
+  border-color: #c0392b;
+  text-align: center;
+}
+
+.rescue .btn {
+  margin-top: 10px;
+}
+
+/* ── Onglets ────────────────────────────────────────────────────────────── */
+
+.tabs {
+  display: flex;
+  gap: 4px;
+  border-bottom: 2px solid rgba(255, 255, 255, 0.12);
+  margin-bottom: 14px;
+}
+
+.tab {
+  font-family: inherit;
+  font-size: 13px;
+  color: #aab;
+  background: transparent;
+  border: none;
+  padding: 8px 12px;
+  cursor: pointer;
+  border-bottom: 3px solid transparent;
+}
+
+.tab:hover {
+  color: #fff;
+}
+
+.tab.active {
+  color: #ffd54f;
+  border-bottom-color: #ffd54f;
+}
+
+.tab-content {
+  min-height: 180px;
+}
+
+/* ── Tableaux & lignes ──────────────────────────────────────────────────── */
+
+.sell-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 14px;
+  font-size: 14px;
+}
+
+.sell-table td {
+  padding: 6px 4px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.sell-table .right {
+  text-align: right;
+  font-weight: bold;
+}
+
+.upgrade-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  font-size: 14px;
+}

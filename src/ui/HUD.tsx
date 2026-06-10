@@ -1,0 +1,119 @@
+import { ORE_IDS, TILES, cargoValue, fmt } from '../game/constants';
+import { maxFuelOf, maxHullOf, useGameStore } from '../store';
+
+function Bar({
+  label,
+  value,
+  max,
+  color,
+  unit,
+}: {
+  label: string;
+  value: number;
+  max: number;
+  color: string;
+  unit: string;
+}) {
+  const pct = Math.max(0, Math.min(1, value / max));
+  return (
+    <div className="bar">
+      <span className="bar-label">{label}</span>
+      <div className="bar-outer">
+        <div className="bar-inner" style={{ width: `${pct * 100}%`, background: color }} />
+        <span className="bar-text">
+          {fmt(value)} / {fmt(max)} {unit}
+        </span>
+      </div>
+    </div>
+  );
+}
+
+export function HUD() {
+  const fuel = useGameStore((s) => s.fuel);
+  const hull = useGameStore((s) => s.hull);
+  const money = useGameStore((s) => s.money);
+  const depth = useGameStore((s) => s.depth);
+  const maxDepth = useGameStore((s) => s.maxDepth);
+  const cargo = useGameStore((s) => s.cargo);
+  const upgrades = useGameStore((s) => s.upgrades);
+  const teleporters = useGameStore((s) => s.teleporters);
+  const canShop = useGameStore((s) => s.canShop);
+  const ui = useGameStore((s) => s.ui);
+  const openShop = useGameStore((s) => s.openShop);
+  const useTeleporter = useGameStore((s) => s.useTeleporter);
+  const newGame = useGameStore((s) => s.newGame);
+
+  const maxFuel = maxFuelOf(upgrades);
+  const maxHull = maxHullOf(upgrades);
+  const fuelLow = fuel / maxFuel < 0.25;
+  const cargoEntries = ORE_IDS.filter((id) => (cargo[id] ?? 0) > 0);
+
+  return (
+    <div className="hud">
+      <div className="hud-top-left panel">
+        <Bar
+          label="⛽"
+          value={fuel}
+          max={maxFuel}
+          color={fuelLow ? '#e74c3c' : '#f5a623'}
+          unit="L"
+        />
+        <Bar label="🛡" value={hull} max={maxHull} color="#2ecc71" unit="PV" />
+      </div>
+
+      <div className="hud-top-right panel">
+        <div className="money">{fmt(money)} $</div>
+        <div className="depth">
+          Profondeur : {depth} m <span className="dim">(max {maxDepth} m)</span>
+        </div>
+        <button
+          className="btn btn-small"
+          onClick={() => {
+            if (window.confirm('Recommencer une nouvelle partie ? La progression sera effacée.'))
+              newGame();
+          }}
+        >
+          ↺ Nouvelle partie
+        </button>
+      </div>
+
+      <div className="hud-bottom-center">
+        {canShop && ui === 'playing' && (
+          <button className="btn btn-shop" onClick={openShop}>
+            [E] Ouvrir le magasin
+          </button>
+        )}
+        <div className="panel cargo">
+          {cargoEntries.length === 0 ? (
+            <span className="dim">Soute vide</span>
+          ) : (
+            <>
+              {cargoEntries.map((id) => (
+                <span key={id} className="cargo-item">
+                  <span className="cargo-dot" style={{ background: TILES[id].gem }} />
+                  {TILES[id].name} ×{cargo[id]}
+                </span>
+              ))}
+              <span className="cargo-total">≈ {fmt(cargoValue(cargo))} $</span>
+            </>
+          )}
+        </div>
+      </div>
+
+      <div className="hud-bottom-right">
+        <button
+          className="btn"
+          disabled={teleporters === 0 || depth === 0 || ui !== 'playing'}
+          onClick={useTeleporter}
+          title="Retour instantané à la surface"
+        >
+          🌀 Téléporteur [T] ×{teleporters}
+        </button>
+      </div>
+
+      <div className="hud-bottom-left dim">
+        ← → ↓ creuser · ↑ voler · E magasin · T téléporteur
+      </div>
+    </div>
+  );
+}
