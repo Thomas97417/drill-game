@@ -631,6 +631,16 @@ const HULL_STYLES = [
   { dark: '#161822', mid: '#2c3046', light: '#4a5070', trim: '#7fe7f0' },
 ] as const;
 
+// Réacteur dorsal par palier — palettes alignées sur HULL_STYLES :
+// Standard, Turbine, Biréacteur (2 tuyères), Vectoriel (ailerons + or), Ionique (flamme cyan)
+const JET_STYLES = [
+  { body: '#3a3e49', lite: '#5d6573', dark: '#23262e', trim: null, nozzles: 1, scale: 1, flame: ['#ff7b2d', '#ffd166', '#fff6da'], glow: 'rgba(255,160,60,0.55)' },
+  { body: '#5a6b82', lite: '#84a0c0', dark: '#2a3340', trim: null, nozzles: 1, scale: 1.08, flame: ['#ff7b2d', '#ffd166', '#fff6da'], glow: 'rgba(255,160,60,0.55)' },
+  { body: '#8d9398', lite: '#c9cfd5', dark: '#5d6166', trim: null, nozzles: 2, scale: 1.16, flame: ['#ff7b2d', '#ffd166', '#fff6da'], glow: 'rgba(255,160,60,0.55)' },
+  { body: '#4c623c', lite: '#7a9a5c', dark: '#2c3a26', trim: '#c9a227', nozzles: 2, scale: 1.24, flame: ['#ff9a3d', '#ffd166', '#fff6da'], glow: 'rgba(255,170,80,0.6)' },
+  { body: '#2c3046', lite: '#4a5070', dark: '#161822', trim: '#7fe7f0', nozzles: 2, scale: 1.32, flame: ['#3fc8de', '#9beef8', '#ffffff'], glow: 'rgba(127,231,240,0.6)' },
+] as const;
+
 // Trépan par palier : Standard, Acier, Carbure, Diamantée, Plasma
 const DRILL_STYLES = [
   { light: '#eef1f6', mid: '#b7bdc9', dark: '#7d8493', tip: '#4d525f', spires: 3, len: 0.46, glow: null },
@@ -665,42 +675,108 @@ function drawPlayer(e: Engine, ctx: CanvasRenderingContext2D, camPxX: number, ca
     ctx.fill();
   }
 
-  // jetpack monté à l'arrière du véhicule, en porte-à-faux derrière les chenilles
+  // réacteur dorsal à l'arrière, habillé selon son palier
+  const up = useGameStore.getState().upgrades;
   const rear = p.facing > 0 ? -1 : 1;
+  const js = JET_STYLES[up.jetpack];
+  const ps = js.scale;
   const packX = rear * w * 0.63;
-  // flamme sous la tuyère, inclinée vers l'arrière
+  const packW = w * 0.22 * ps;
+  const packTop = -h * 0.24 * ps;
+  const packH = h * 0.44 * ps;
+  const nozzleY = packTop + packH;
+  const nozzleOffs = js.nozzles === 2 ? [-packW * 0.28, packW * 0.28] : [0];
+  // flammes sous la/les tuyère(s), inclinées vers l'arrière
   if (p.flying) {
     const f = 0.65 + Math.sin(e.time * 42) * 0.25;
     ctx.save();
-    ctx.translate(packX, h * 0.28);
+    ctx.translate(packX, nozzleY + h * 0.08);
     ctx.rotate(rear * 0.24);
-    const glow = ctx.createRadialGradient(0, h * 0.25, 2, 0, h * 0.25, h * 0.85);
-    glow.addColorStop(0, 'rgba(255,160,60,0.55)');
-    glow.addColorStop(1, 'rgba(255,160,60,0)');
+    const glow = ctx.createRadialGradient(0, h * 0.25, 2, 0, h * 0.25, h * 0.9);
+    glow.addColorStop(0, js.glow);
+    glow.addColorStop(1, 'rgba(0,0,0,0)');
     ctx.fillStyle = glow;
     ctx.fillRect(-w * 0.8, -h * 0.1, w * 1.6, h * 1.5);
-    ctx.fillStyle = '#ff7b2d';
-    flame(ctx, -w * 0.14, 0, w * 0.28, h * 0.66 * f);
-    ctx.fillStyle = '#ffd166';
-    flame(ctx, -w * 0.085, 0, w * 0.17, h * 0.42 * f);
-    ctx.fillStyle = '#fff6da';
-    flame(ctx, -w * 0.04, 0, w * 0.08, h * 0.2 * f);
+    const fs = js.nozzles === 2 ? 0.72 : 1;
+    for (const off of nozzleOffs) {
+      ctx.fillStyle = js.flame[0];
+      flame(ctx, off - w * 0.14 * fs, 0, w * 0.28 * fs, h * 0.66 * f * ps);
+      ctx.fillStyle = js.flame[1];
+      flame(ctx, off - w * 0.085 * fs, 0, w * 0.17 * fs, h * 0.42 * f * ps);
+      ctx.fillStyle = js.flame[2];
+      flame(ctx, off - w * 0.04 * fs, 0, w * 0.08 * fs, h * 0.2 * f * ps);
+    }
     ctx.restore();
   }
-  // réacteur dorsal : corps, liseré clair, sangle, tuyère
-  ctx.fillStyle = '#3a3e49';
-  roundRect(ctx, packX - w * 0.11, -h * 0.24, w * 0.22, h * 0.44, 4);
-  ctx.fillStyle = '#5d6573';
-  roundRect(ctx, packX - w * 0.11, -h * 0.24, w * 0.08, h * 0.44, 4);
-  ctx.fillStyle = '#23262e';
-  ctx.fillRect(packX - w * 0.13, -h * 0.06, w * 0.26, 4);
-  ctx.beginPath();
-  ctx.moveTo(packX - w * 0.07, h * 0.2);
-  ctx.lineTo(packX + w * 0.07, h * 0.2);
-  ctx.lineTo(packX + w * 0.1, h * 0.3);
-  ctx.lineTo(packX - w * 0.1, h * 0.3);
-  ctx.closePath();
-  ctx.fill();
+  // corps du réacteur
+  ctx.fillStyle = js.dark;
+  roundRect(ctx, packX - packW / 2 - 1, packTop - 1, packW + 2, packH + 2, 5);
+  ctx.fillStyle = js.body;
+  roundRect(ctx, packX - packW / 2, packTop, packW, packH, 4);
+  ctx.fillStyle = js.lite;
+  roundRect(ctx, packX - packW / 2, packTop, packW * 0.36, packH, 4);
+  // sangle de fixation
+  ctx.fillStyle = js.dark;
+  ctx.fillRect(packX - packW / 2 - 2, -h * 0.06, packW + 4, 4);
+  // palier 1+ : entrée d'air de turbine avec pales animées
+  if (up.jetpack >= 1) {
+    const tx = packX;
+    const ty = packTop + packH * 0.28;
+    ctx.fillStyle = js.dark;
+    ctx.beginPath();
+    ctx.arc(tx, ty, packW * 0.3, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = js.lite;
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.arc(tx, ty, packW * 0.3, 0, Math.PI * 2);
+    ctx.stroke();
+    for (let i = 0; i < 3; i++) {
+      const a = e.time * (p.flying ? 16 : 2) + (i * Math.PI * 2) / 3;
+      ctx.beginPath();
+      ctx.moveTo(tx, ty);
+      ctx.lineTo(tx + Math.cos(a) * packW * 0.26, ty + Math.sin(a) * packW * 0.26);
+      ctx.stroke();
+    }
+  }
+  // tuyère(s) — le biréacteur et au-delà en ont deux
+  ctx.fillStyle = js.dark;
+  for (const off of nozzleOffs) {
+    const nw = js.nozzles === 2 ? packW * 0.26 : packW * 0.38;
+    ctx.beginPath();
+    ctx.moveTo(packX + off - nw * 0.7, nozzleY);
+    ctx.lineTo(packX + off + nw * 0.7, nozzleY);
+    ctx.lineTo(packX + off + nw, nozzleY + h * 0.1);
+    ctx.lineTo(packX + off - nw, nozzleY + h * 0.1);
+    ctx.closePath();
+    ctx.fill();
+  }
+  // palier 3+ : ailerons vectoriels
+  if (up.jetpack >= 3) {
+    ctx.fillStyle = js.lite;
+    for (const side of [-1, 1] as const) {
+      ctx.beginPath();
+      ctx.moveTo(packX + (side * packW) / 2, nozzleY - h * 0.05);
+      ctx.lineTo(packX + (side * packW) / 2 + side * w * 0.08, nozzleY + h * 0.1);
+      ctx.lineTo(packX + (side * packW) / 2, nozzleY + h * 0.05);
+      ctx.closePath();
+      ctx.fill();
+    }
+  }
+  // liseré : doré au palier 3, énergétique pulsant au palier 4
+  if (js.trim) {
+    ctx.save();
+    ctx.strokeStyle = js.trim;
+    ctx.lineWidth = 2;
+    if (up.jetpack >= 4) {
+      ctx.shadowColor = js.trim;
+      ctx.shadowBlur = 6 + Math.sin(e.time * 6) * 3;
+    }
+    ctx.beginPath();
+    ctx.roundRect(packX - packW / 2 + 1, packTop + 1, packW - 2, packH - 2, 4);
+    ctx.stroke();
+    ctx.restore();
+  }
 
   // chenilles avec maillons animés
   ctx.fillStyle = '#23262e';
@@ -727,7 +803,6 @@ function drawPlayer(e: Engine, ctx: CanvasRenderingContext2D, camPxX: number, ca
   }
 
   // caisse : couleurs et blindages selon le palier de coque
-  const up = useGameStore.getState().upgrades;
   const hs = HULL_STYLES[up.hull];
   ctx.fillStyle = hs.dark;
   roundRect(ctx, -w / 2, -h * 0.28, w, h * 0.52, 6);

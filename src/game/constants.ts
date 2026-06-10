@@ -103,7 +103,7 @@ export const TANK_TIERS: Tier[] = [
   { name: '750 L', price: 8000, stat: 750 },
 ];
 
-// stat = multiplicateur de vitesse de vol (jetpack)
+// stat = multiplicateur de vitesse de vol (réacteur dorsal)
 export const JETPACK_TIERS: Tier[] = [
   { name: 'Standard', price: 0, stat: 1 },
   { name: 'Turbine', price: 200, stat: 1.3 },
@@ -143,6 +143,9 @@ export const BURN_FLY = 1.2;
 
 export const DIG_BASE_TIME = 0.6; // s par point de dureté, foreuse standard
 export const DIG_DEPTH_FACTOR = 0.003; // durcissement du sol avec la profondeur
+// La durée de forage augmente déjà avec la profondeur : le débit d'essence,
+// lui, ne prend qu'un léger malus pour éviter un coût par bloc au carré.
+export const DIG_BURN_DEPTH_FACTOR = 0.0008;
 
 // ── Bâtiments de surface (plages de tuiles en x) ─────────────────────────────
 export type BuildingId = 'sell' | 'fuel' | 'garage';
@@ -160,9 +163,10 @@ export function digTime(kind: TileKind, depth: number, drillTier: number): numbe
   return (TILES[kind].hardness * DIG_BASE_TIME * digDepthFactor(depth)) / DRILL_TIERS[drillTier].stat;
 }
 
-// Consommation pendant le forage : croît avec la dureté du bloc et la profondeur
+// Consommation pendant le forage : croît avec la dureté du bloc, et légèrement
+// avec la profondeur
 export function digBurn(kind: TileKind, depth: number): number {
-  return BURN_DIG * TILES[kind].hardness * digDepthFactor(depth);
+  return BURN_DIG * TILES[kind].hardness * (1 + Math.max(0, depth) * DIG_BURN_DEPTH_FACTOR);
 }
 
 export function cargoValue(cargo: Partial<Record<OreId, number>>): number {

@@ -39,7 +39,7 @@ export function Inventory() {
     { label: '⚙️ Foreuse', tier: DRILL_TIERS[upgrades.drill], stat: `×${DRILL_TIERS[upgrades.drill].stat}` },
     { label: '⛽ Réservoir', tier: TANK_TIERS[upgrades.tank], stat: `${TANK_TIERS[upgrades.tank].stat} L` },
     { label: '🛡 Coque', tier: HULL_TIERS[upgrades.hull], stat: `${HULL_TIERS[upgrades.hull].stat} PV` },
-    { label: '🚀 Jetpack', tier: JETPACK_TIERS[upgrades.jetpack], stat: `×${JETPACK_TIERS[upgrades.jetpack].stat}` },
+    { label: '🚀 Réacteur', tier: JETPACK_TIERS[upgrades.jetpack], stat: `×${JETPACK_TIERS[upgrades.jetpack].stat}` },
   ];
 
   return (

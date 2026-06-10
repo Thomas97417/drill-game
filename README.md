@@ -16,7 +16,7 @@ bun run preview  # sert le build de production
 ## Jouer
 
 - **← → ↓** (ou ZQSD/WASD) : se déplacer et **creuser** les blocs adjacents
-- **↑** : jetpack (consomme de l'essence)
+- **↑** : réacteur dorsal (consomme de l'essence)
 - **E** : entrer dans le bâtiment le plus proche (à la surface)
 - **T** : utiliser un téléporteur d'urgence
 - **X** : larguer une dynamite sous la foreuse (mèche de 3 s — éloignez-vous !) ;

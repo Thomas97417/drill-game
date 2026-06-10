@@ -19,7 +19,7 @@ const UPGRADE_ROWS: { kind: UpgradeKind; title: string; tiers: typeof DRILL_TIER
   { kind: 'drill', title: '⚙️ Foreuse (vitesse)', tiers: DRILL_TIERS, statLabel: (s) => `×${s}` },
   { kind: 'tank', title: '⛽ Réservoir', tiers: TANK_TIERS, statLabel: (s) => `${s} L` },
   { kind: 'hull', title: '🛡 Coque', tiers: HULL_TIERS, statLabel: (s) => `${s} PV` },
-  { kind: 'jetpack', title: '🚀 Jetpack (vitesse de vol)', tiers: JETPACK_TIERS, statLabel: (s) => `×${s}` },
+  { kind: 'jetpack', title: '🚀 Réacteur (vitesse de vol)', tiers: JETPACK_TIERS, statLabel: (s) => `×${s}` },
 ];
 
 const TITLES = {

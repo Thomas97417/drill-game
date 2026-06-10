@@ -230,9 +230,9 @@ const moneyBefore = (await snap()).money;
 await page.click('.upgrade-row:has-text("Foreuse") button');
 s = await snap();
 check(s.money === moneyBefore - 150, 'achat amélioration foreuse (−150 $)');
-await page.click('.upgrade-row:has-text("Jetpack") button');
+await page.click('.upgrade-row:has-text("Réacteur") button');
 s = await snap();
-check(s.money === moneyBefore - 150 - 200, 'achat amélioration jetpack (−200 $)');
+check(s.money === moneyBefore - 150 - 200, 'achat amélioration réacteur (−200 $)');
 // un réservoir/une coque achetés arrivent pleins, sans repasser par la pompe
 await page.click('.upgrade-row:has-text("🛡 Coque") button');
 s = await snap();
