@@ -1,8 +1,9 @@
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import {
   DRILL_TIERS,
   FUEL_PRICE,
   HULL_TIERS,
+  JETPACK_TIERS,
   ORE_IDS,
   REPAIR_PRICE,
   TANK_TIERS,
@@ -11,16 +12,20 @@ import {
   cargoValue,
   fmt,
 } from '../game/constants';
-import { maxFuelOf, maxHullOf, useGameStore, type UpgradeKind } from '../store';
-
-const TABS = ['Vendre', 'Essence', 'Améliorations', 'Téléporteur'] as const;
-type Tab = (typeof TABS)[number];
+import { isBuilding, maxFuelOf, maxHullOf, useGameStore, type UpgradeKind } from '../store';
 
 const UPGRADE_ROWS: { kind: UpgradeKind; title: string; tiers: typeof DRILL_TIERS; statLabel: (s: number) => string }[] = [
   { kind: 'drill', title: '⚙️ Foreuse (vitesse)', tiers: DRILL_TIERS, statLabel: (s) => `×${s}` },
   { kind: 'tank', title: '⛽ Réservoir', tiers: TANK_TIERS, statLabel: (s) => `${s} L` },
   { kind: 'hull', title: '🛡 Coque', tiers: HULL_TIERS, statLabel: (s) => `${s} PV` },
+  { kind: 'jetpack', title: '🚀 Jetpack (vitesse de vol)', tiers: JETPACK_TIERS, statLabel: (s) => `×${s}` },
 ];
+
+const TITLES = {
+  sell: '🏪 Vente de minerais',
+  fuel: '⛽ Station essence',
+  garage: '🔧 Atelier',
+} as const;
 
 export function Shop() {
   const ui = useGameStore((s) => s.ui);
@@ -37,18 +42,18 @@ export function Shop() {
   const buyTeleporter = useGameStore((s) => s.buyTeleporter);
   const closeShop = useGameStore((s) => s.closeShop);
 
-  const [tab, setTab] = useState<Tab>('Vendre');
+  const open = isBuilding(ui);
 
   useEffect(() => {
-    if (ui !== 'shop') return;
+    if (!open) return;
     const onKey = (e: KeyboardEvent) => {
       if (e.code === 'Escape' || e.code === 'KeyE') closeShop();
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [ui, closeShop]);
+  }, [open, closeShop]);
 
-  if (ui !== 'shop') return null;
+  if (!open) return null;
 
   const maxFuel = maxFuelOf(upgrades);
   const maxHull = maxHullOf(upgrades);
@@ -61,26 +66,14 @@ export function Shop() {
     <div className="overlay">
       <div className="modal shop">
         <div className="modal-header">
-          <h2>🏪 Magasin</h2>
+          <h2>{TITLES[ui]}</h2>
           <div className="money">{fmt(money)} $</div>
           <button className="btn btn-small" onClick={closeShop}>
             ✕ Fermer [Échap]
           </button>
         </div>
 
-        <div className="tabs">
-          {TABS.map((t) => (
-            <button
-              key={t}
-              className={`tab ${tab === t ? 'active' : ''}`}
-              onClick={() => setTab(t)}
-            >
-              {t}
-            </button>
-          ))}
-        </div>
-
-        {tab === 'Vendre' && (
+        {ui === 'sell' && (
           <div className="tab-content">
             {cargoEntries.length === 0 ? (
               <p className="dim">Votre soute est vide. Allez creuser !</p>
@@ -109,7 +102,7 @@ export function Shop() {
           </div>
         )}
 
-        {tab === 'Essence' && (
+        {ui === 'fuel' && (
           <div className="tab-content">
             <p>
               Réservoir : <b>{fmt(fuel)} / {fmt(maxFuel)} L</b> · Essence à {FUEL_PRICE} $/L
@@ -133,22 +126,26 @@ export function Shop() {
                 Plein ({fmt(missingFuel * FUEL_PRICE)} $)
               </button>
             </div>
-            <hr />
-            <p>
-              Coque : <b>{fmt(hull)} / {fmt(maxHull)} PV</b> · Réparation à {REPAIR_PRICE} $/PV
-            </p>
-            <button
-              className="btn"
-              disabled={missingHull <= 0 || money < 1}
-              onClick={repairHull}
-            >
-              🔧 Réparer ({fmt(missingHull * REPAIR_PRICE)} $)
-            </button>
           </div>
         )}
 
-        {tab === 'Améliorations' && (
+        {ui === 'garage' && (
           <div className="tab-content">
+            <div className="upgrade-row">
+              <div>
+                <b>🔧 Réparation de la coque</b>
+                <div className="dim">
+                  {fmt(hull)} / {fmt(maxHull)} PV · {REPAIR_PRICE} $/PV
+                </div>
+              </div>
+              <button
+                className="btn"
+                disabled={missingHull <= 0 || money < 1}
+                onClick={repairHull}
+              >
+                Réparer ({fmt(missingHull * REPAIR_PRICE)} $)
+              </button>
+            </div>
             {UPGRADE_ROWS.map(({ kind, title, tiers, statLabel }) => {
               const lvl = upgrades[kind];
               const cur = tiers[lvl];
@@ -175,25 +172,19 @@ export function Shop() {
                 </div>
               );
             })}
-          </div>
-        )}
-
-        {tab === 'Téléporteur' && (
-          <div className="tab-content">
-            <p>
-              Téléporteur d'urgence : retour instantané à la surface, où que vous soyez.
-              Usage unique.
-            </p>
-            <p>
-              En stock : <b>×{teleporters}</b>
-            </p>
-            <button
-              className="btn btn-primary"
-              disabled={money < TELEPORTER_PRICE}
-              onClick={buyTeleporter}
-            >
-              Acheter un téléporteur — {fmt(TELEPORTER_PRICE)} $
-            </button>
+            <div className="upgrade-row">
+              <div>
+                <b>🌀 Téléporteur d'urgence</b>
+                <div className="dim">Retour instantané à la surface · usage unique · en stock : ×{teleporters}</div>
+              </div>
+              <button
+                className="btn"
+                disabled={money < TELEPORTER_PRICE}
+                onClick={buyTeleporter}
+              >
+                Acheter — {fmt(TELEPORTER_PRICE)} $
+              </button>
+            </div>
           </div>
         )}
       </div>

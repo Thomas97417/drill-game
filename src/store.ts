@@ -3,21 +3,26 @@ import {
   DRILL_TIERS,
   FUEL_PRICE,
   HULL_TIERS,
+  JETPACK_TIERS,
   REPAIR_PRICE,
   TANK_TIERS,
   TELEPORTER_PRICE,
   cargoValue,
+  type BuildingId,
   type OreId,
 } from './game/constants';
 import { loadSave } from './game/save';
 
-export type UiMode = 'playing' | 'shop' | 'rescue';
-export type UpgradeKind = 'drill' | 'tank' | 'hull';
+export type UiMode = 'playing' | 'rescue' | BuildingId;
+export const isBuilding = (ui: UiMode): ui is BuildingId =>
+  ui === 'sell' || ui === 'fuel' || ui === 'garage';
+export type UpgradeKind = 'drill' | 'tank' | 'hull' | 'jetpack';
 
 export interface Upgrades {
   drill: number;
   tank: number;
   hull: number;
+  jetpack: number;
 }
 
 interface GameStore {
@@ -29,7 +34,7 @@ interface GameStore {
   teleporters: number;
   depth: number;
   maxDepth: number;
-  canShop: boolean;
+  nearBuilding: BuildingId | null;
   ui: UiMode;
   rescueReason: 'fuel' | 'hull';
   // ordre à consommer par le moteur de jeu
@@ -42,7 +47,7 @@ interface GameStore {
   buyUpgrade: (kind: UpgradeKind) => void;
   buyTeleporter: () => void;
   useTeleporter: () => void;
-  openShop: () => void;
+  openShop: (building: BuildingId) => void;
   closeShop: () => void;
   triggerRescue: (reason: 'fuel' | 'hull') => void;
   doRescue: () => void;
@@ -53,7 +58,12 @@ interface GameStore {
 export const maxFuelOf = (u: Upgrades) => TANK_TIERS[u.tank].stat;
 export const maxHullOf = (u: Upgrades) => HULL_TIERS[u.hull].stat;
 
-const TIERS = { drill: DRILL_TIERS, tank: TANK_TIERS, hull: HULL_TIERS } as const;
+const TIERS = {
+  drill: DRILL_TIERS,
+  tank: TANK_TIERS,
+  hull: HULL_TIERS,
+  jetpack: JETPACK_TIERS,
+} as const;
 
 const saved = loadSave();
 
@@ -62,11 +72,11 @@ const freshState = () => ({
   fuel: TANK_TIERS[0].stat,
   hull: HULL_TIERS[0].stat,
   cargo: {} as Partial<Record<OreId, number>>,
-  upgrades: { drill: 0, tank: 0, hull: 0 },
+  upgrades: { drill: 0, tank: 0, hull: 0, jetpack: 0 },
   teleporters: 0,
   depth: 0,
   maxDepth: 0,
-  canShop: false,
+  nearBuilding: null as BuildingId | null,
   ui: 'playing' as UiMode,
   rescueReason: 'fuel' as const,
   pendingAction: null,
@@ -80,7 +90,8 @@ export const useGameStore = create<GameStore>((set) => ({
         fuel: saved.fuel,
         hull: saved.hull,
         cargo: saved.cargo,
-        upgrades: saved.upgrades,
+        // jetpack ?? 0 : sauvegardes antérieures à cette amélioration
+        upgrades: { ...saved.upgrades, jetpack: saved.upgrades.jetpack ?? 0 },
         teleporters: saved.teleporters,
         maxDepth: saved.maxDepth,
       }
@@ -139,8 +150,8 @@ export const useGameStore = create<GameStore>((set) => ({
         : s,
     ),
 
-  openShop: () => set({ ui: 'shop' }),
-  closeShop: () => set((s) => (s.ui === 'shop' ? { ui: 'playing' } : s)),
+  openShop: (building) => set({ ui: building }),
+  closeShop: () => set((s) => (isBuilding(s.ui) ? { ui: 'playing' } : s)),
 
   triggerRescue: (reason) => set({ ui: 'rescue', rescueReason: reason }),
 

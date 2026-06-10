@@ -111,7 +111,7 @@ await page.screenshot({ path: '/tmp/drill-2-digging.png' });
 // minerais pour tester la vente (l'apparition naturelle est aléatoire)
 await page.evaluate(() => {
   const add = (window as any).__store.getState().addCargo;
-  for (let i = 0; i < 60; i++) add('coal');
+  for (let i = 0; i < 100; i++) add('coal');
 });
 
 // ── Remonter au jetpack : Haut+Gauche pour glisser sous le plafond
@@ -134,36 +134,71 @@ await page.waitForTimeout(1500); // retombée + atterrissage
 s = await snap();
 check(s.depth === 0, `retour à la surface (profondeur ${s.depth} m)`);
 
-// ── Marcher jusqu'au magasin (x ≈ 5) ──────────────────────────────────────
-const dir = s.x > 5 ? 'ArrowLeft' : 'ArrowRight';
-await holdUntil(page, dir, (st) => Math.abs(st.x - 5) < 0.6, 8000);
-await page.waitForTimeout(300);
+// marche jusqu'à une position x donnée à la surface
+async function walkTo(x: number) {
+  const cur = (await snap()).x;
+  const key = cur > x ? 'ArrowLeft' : 'ArrowRight';
+  await holdUntil(page, key, (st) => Math.abs(st.x - x) < 0.6, 12000);
+  await page.waitForTimeout(250);
+}
+
+// ── Comptoir de vente (x ≈ 3,5) ───────────────────────────────────────────
+await walkTo(3.5);
 await page.keyboard.press('KeyE');
 await page.waitForTimeout(400);
-check((await page.locator('.modal.shop').count()) > 0, 'magasin ouvert avec [E]');
+check(
+  (await page.locator('.modal.shop:has-text("Vente de minerais")').count()) > 0,
+  'comptoir de vente ouvert avec [E]',
+);
 await page.screenshot({ path: '/tmp/drill-3-shop.png' });
-
-// ── Vendre ────────────────────────────────────────────────────────────────
 await page.click('button:has-text("Tout vendre")');
 s = await snap();
-check(s.money >= 540 && s.coal === 0, `vente de la cargaison (${s.money} $)`);
+check(s.money >= 880 && s.coal === 0, `vente de la cargaison (${s.money} $)`);
+await page.keyboard.press('Escape');
+await page.waitForTimeout(200);
 
-// ── Essence : plein ───────────────────────────────────────────────────────
-await page.click('.tab:has-text("Essence")');
+// les fondations sous les bâtiments sont indestructibles
+await page.keyboard.down('ArrowDown');
+await page.waitForTimeout(1500);
+await page.keyboard.up('ArrowDown');
+s = await snap();
+check(s.depth === 0, 'impossible de creuser sous un bâtiment');
+
+// ── Station essence (x ≈ 9,5) ─────────────────────────────────────────────
+await walkTo(9.5);
+await page.keyboard.press('KeyE');
+await page.waitForTimeout(400);
+check(
+  (await page.locator('.modal.shop:has-text("Station essence")').count()) > 0,
+  'station essence ouverte avec [E]',
+);
 await page.click('button:has-text("Plein")');
 s = await snap();
 check(s.fuel >= 99.5, `plein d'essence (${s.fuel.toFixed(1)} L)`);
+await page.keyboard.press('Escape');
+await page.waitForTimeout(200);
 
-// ── Amélioration : foreuse Acier (150 $) ──────────────────────────────────
-await page.click('.tab:has-text("Améliorations")');
-const moneyBefore = s.money;
+// ── Atelier (x ≈ 22) : réparation, améliorations, téléporteur ─────────────
+await walkTo(22);
+await page.keyboard.press('KeyE');
+await page.waitForTimeout(400);
+check(
+  (await page.locator('.modal.shop:has-text("Atelier")').count()) > 0,
+  'atelier ouvert avec [E]',
+);
+if (s.hull < 100) {
+  await page.click('.upgrade-row:has-text("Réparation") button');
+  s = await snap();
+  check(s.hull >= 99.5, `réparation de la coque (${s.hull.toFixed(0)} PV)`);
+}
+const moneyBefore = (await snap()).money;
 await page.click('.upgrade-row:has-text("Foreuse") button');
 s = await snap();
 check(s.money === moneyBefore - 150, 'achat amélioration foreuse (−150 $)');
-
-// ── Téléporteur (300 $) ───────────────────────────────────────────────────
-await page.click('.tab:has-text("Téléporteur")');
-await page.click('button:has-text("Acheter un téléporteur")');
+await page.click('.upgrade-row:has-text("Jetpack") button');
+s = await snap();
+check(s.money === moneyBefore - 150 - 200, 'achat amélioration jetpack (−200 $)');
+await page.click('.upgrade-row:has-text("Téléporteur") button');
 s = await snap();
 check(s.teleporters === 1, 'achat téléporteur');
 await page.screenshot({ path: '/tmp/drill-4-shop-upgrades.png' });
@@ -172,7 +207,16 @@ await page.keyboard.press('Escape');
 await page.waitForTimeout(200);
 check((await snap()).ui === 'playing', 'fermeture du magasin');
 
-// ── Recreuser puis se téléporter ──────────────────────────────────────────
+// ── Le jetpack Turbine dépasse la vitesse de vol de base (7,5 t/s) ────────
+await page.keyboard.down('ArrowUp');
+await page.waitForTimeout(900);
+const vyFly: number = await page.evaluate(() => (window as any).__engine.player.vy);
+await page.keyboard.up('ArrowUp');
+check(vyFly < -8, `vol plus rapide après amélioration (${(-vyFly).toFixed(1)} t/s)`);
+await page.waitForTimeout(2000); // retombée
+
+// ── Recreuser (à l'écart des fondations) puis se téléporter ───────────────
+await walkTo(26.5);
 await holdUntil(page, 'ArrowDown', (st) => st.depth >= 3);
 await page.keyboard.press('KeyT');
 await page.waitForTimeout(400);

@@ -17,13 +17,15 @@ bun run preview  # sert le build de production
 
 - **← → ↓** (ou ZQSD/WASD) : se déplacer et **creuser** les blocs adjacents
 - **↑** : jetpack (consomme de l'essence)
-- **E** : ouvrir le magasin (à la surface, près des bâtiments)
+- **E** : entrer dans le bâtiment le plus proche (à la surface)
 - **T** : utiliser un téléporteur d'urgence
 
 La boucle : creuser → récolter des minerais (charbon, fer, argent, or, rubis,
 émeraude, diamant — de plus en plus précieux avec la profondeur) → remonter →
-**vendre** au magasin → faire le **plein** à la pompe → acheter des
-**améliorations** (vitesse de forage, réservoir, coque).
+passer aux trois bâtiments de surface : le **comptoir de vente** (céder sa
+cargaison), la **station essence** (refaire le plein) et l'**atelier**
+(réparations, améliorations — vitesse de forage, réservoir, coque — et
+téléporteurs d'urgence).
 
 Attention aux chutes (dégâts de coque) et à la panne sèche : le sauvetage vous
 ramène à la surface mais la cargaison est perdue. La partie est sauvegardée

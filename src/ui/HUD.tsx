@@ -37,7 +37,7 @@ export function HUD() {
   const cargo = useGameStore((s) => s.cargo);
   const upgrades = useGameStore((s) => s.upgrades);
   const teleporters = useGameStore((s) => s.teleporters);
-  const canShop = useGameStore((s) => s.canShop);
+  const nearBuilding = useGameStore((s) => s.nearBuilding);
   const ui = useGameStore((s) => s.ui);
   const openShop = useGameStore((s) => s.openShop);
   const useTeleporter = useGameStore((s) => s.useTeleporter);
@@ -78,9 +78,14 @@ export function HUD() {
       </div>
 
       <div className="hud-bottom-center">
-        {canShop && ui === 'playing' && (
-          <button className="btn btn-shop" onClick={openShop}>
-            [E] Ouvrir le magasin
+        {nearBuilding && ui === 'playing' && (
+          <button className="btn btn-shop" onClick={() => openShop(nearBuilding)}>
+            [E]{' '}
+            {nearBuilding === 'sell'
+              ? 'Vendre les minerais'
+              : nearBuilding === 'fuel'
+                ? 'Station essence'
+                : 'Atelier'}
           </button>
         )}
         <div className="panel cargo">
@@ -112,7 +117,7 @@ export function HUD() {
       </div>
 
       <div className="hud-bottom-left dim">
-        ← → ↓ creuser · ↑ voler · E magasin · T téléporteur
+        ← → ↓ creuser · ↑ voler · E bâtiments · T téléporteur
       </div>
     </div>
   );

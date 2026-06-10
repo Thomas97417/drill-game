@@ -1,4 +1,5 @@
 import {
+  BUILDINGS,
   BURN_DIG,
   BURN_FLY,
   BURN_MOVE,
@@ -6,18 +7,18 @@ import {
   FLY_ACCEL,
   GRAVITY,
   HULL_DMG_FACTOR,
+  JETPACK_TIERS,
   MAX_FALL,
   MAX_FLY,
   MOVE_SPEED,
-  PUMP_RANGE,
   SAFE_FALL_SPEED,
-  SHOP_RANGE,
   SKY_LIMIT,
   SPAWN_X,
   TILE,
   TILES,
   WORLD_W,
   digTime,
+  type BuildingId,
   type OreId,
 } from './constants';
 import { Input } from './input';
@@ -223,9 +224,10 @@ export class Engine {
 
     // ── Verticale : jetpack + gravité ────────────────────────────────────────
     p.flying = up;
+    const flyMult = JETPACK_TIERS[store.upgrades.jetpack].stat;
     p.vy += GRAVITY * dt;
-    if (up) p.vy -= FLY_ACCEL * dt;
-    p.vy = Math.max(-MAX_FLY, Math.min(MAX_FALL, p.vy));
+    if (up) p.vy -= FLY_ACCEL * flyMult * dt;
+    p.vy = Math.max(-MAX_FLY * flyMult, Math.min(MAX_FALL, p.vy));
 
     const impact = this.moveAndCollide(dt);
     if (impact > SAFE_FALL_SPEED) {
@@ -251,15 +253,15 @@ export class Engine {
     const depth = Math.max(0, Math.floor(p.y + p.h / 2) + 1);
     const maxDepth = Math.max(store.maxDepth, depth);
     const ccx = Math.floor(p.x + p.w / 2);
-    const canShop =
-      p.grounded &&
-      depth === 0 &&
-      ((ccx >= SHOP_RANGE[0] && ccx <= SHOP_RANGE[1]) ||
-        (ccx >= PUMP_RANGE[0] && ccx <= PUMP_RANGE[1]));
+    let nearBuilding: BuildingId | null = null;
+    if (p.grounded && depth === 0) {
+      const b = BUILDINGS.find(({ range }) => ccx >= range[0] && ccx <= range[1]);
+      nearBuilding = b?.id ?? null;
+    }
 
-    useGameStore.setState({ fuel, hull, depth, maxDepth, canShop });
+    useGameStore.setState({ fuel, hull, depth, maxDepth, nearBuilding });
 
-    if (canShop && this.input.consume('interact')) store.openShop();
+    if (nearBuilding && this.input.consume('interact')) store.openShop(nearBuilding);
 
     if (hull <= 0) store.triggerRescue('hull');
     else if (fuel <= 0 && p.grounded) store.triggerRescue('fuel');

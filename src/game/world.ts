@@ -1,4 +1,13 @@
-import { ORE_BANDS, TILES, WORLD_W, type TileDef, type TileKind } from './constants';
+import {
+  BUILDINGS,
+  CAVE_MIN_DEPTH,
+  ORE_BANDS,
+  TILES,
+  WORLD_W,
+  caveChance,
+  type TileDef,
+  type TileKind,
+} from './constants';
 import { mulberry32 } from './rng';
 
 const BAND_FADE = 25; // tuiles de fondu en bord de bande de minerai
@@ -50,7 +59,14 @@ export class World {
         continue;
       }
       if (y === 0) {
-        row[x] = 'dirt';
+        // fondations indestructibles sous les bâtiments de surface
+        const underBuilding = BUILDINGS.some(({ range }) => x >= range[0] && x <= range[1]);
+        row[x] = underBuilding ? 'foundation' : 'dirt';
+        continue;
+      }
+      // grottes : poches de vide naturelles
+      if (y >= CAVE_MIN_DEPTH && rng() < caveChance(y)) {
+        row[x] = 'empty';
         continue;
       }
       const hardChance = y > 120 ? Math.min(0.5, (y - 120) * 0.003) : 0;

@@ -1,11 +1,4 @@
-import {
-  PUMP_RANGE,
-  SHOP_RANGE,
-  TILE,
-  TILES,
-  WORLD_W,
-  type TileKind,
-} from './constants';
+import { BUILDINGS, TILE, TILES, WORLD_W, type TileKind } from './constants';
 import { hash2D } from './rng';
 import type { Engine } from './engine';
 
@@ -138,8 +131,8 @@ function drawTile(
     ctx.fillRect(px, py, TILE, 4);
   }
 
-  // herbe de surface
-  if (y === 0) {
+  // herbe de surface (pas sur les fondations des bâtiments)
+  if (y === 0 && kind !== 'foundation') {
     ctx.fillStyle = '#3f9b3f';
     ctx.fillRect(px, py, TILE, 8);
     ctx.fillStyle = '#55b855';
@@ -179,61 +172,86 @@ function drawBuildings(ctx: CanvasRenderingContext2D, camPxX: number, camPxY: nu
   const sx = (x: number) => x * TILE - camPxX;
   const sy = (y: number) => y * TILE - camPxY;
   if (sy(0) < -TILE * 4) return;
+  const groundY = sy(0);
 
-  // ── Magasin ──
-  {
-    const x = sx(SHOP_RANGE[0]);
-    const w = (SHOP_RANGE[1] - SHOP_RANGE[0] + 1) * TILE;
-    const groundY = sy(0);
-    const h = TILE * 2.2;
-    ctx.fillStyle = '#8d6e63';
-    ctx.fillRect(x, groundY - h, w, h);
-    // porte + fenêtre
-    ctx.fillStyle = '#4e342e';
-    ctx.fillRect(x + w * 0.62, groundY - TILE * 1.3, TILE * 0.8, TILE * 1.3);
-    ctx.fillStyle = '#ffe9a8';
-    ctx.fillRect(x + w * 0.14, groundY - TILE * 1.5, TILE * 0.9, TILE * 0.7);
-    // toit
-    ctx.fillStyle = '#c0392b';
-    ctx.beginPath();
-    ctx.moveTo(x - 10, groundY - h);
-    ctx.lineTo(x + w / 2, groundY - h - TILE * 0.9);
-    ctx.lineTo(x + w + 10, groundY - h);
-    ctx.closePath();
-    ctx.fill();
-    // enseigne
-    ctx.fillStyle = '#1d1f27';
-    ctx.fillRect(x + w / 2 - 58, groundY - h + 10, 116, 24);
-    ctx.fillStyle = '#ffd54f';
-    ctx.font = `bold 15px ui-monospace, monospace`;
-    ctx.textAlign = 'center';
-    ctx.fillText('MAGASIN', x + w / 2, groundY - h + 28);
-  }
+  for (const { id, range } of BUILDINGS) {
+    const x = sx(range[0]);
+    const w = (range[1] - range[0] + 1) * TILE;
 
-  // ── Pompe à essence ──
-  {
-    const x = sx(PUMP_RANGE[0]);
-    const w = (PUMP_RANGE[1] - PUMP_RANGE[0] + 1) * TILE;
-    const groundY = sy(0);
-    // auvent
-    ctx.fillStyle = '#e67e22';
-    ctx.fillRect(x - 6, groundY - TILE * 2.4, w + 12, 14);
-    ctx.fillStyle = '#b0b6c2';
-    ctx.fillRect(x + 6, groundY - TILE * 2.4 + 14, 6, TILE * 2.4 - 14);
-    ctx.fillRect(x + w - 12, groundY - TILE * 2.4 + 14, 6, TILE * 2.4 - 14);
-    // pompe
-    ctx.fillStyle = '#d63031';
-    ctx.fillRect(x + w / 2 - 16, groundY - TILE * 1.4, 32, TILE * 1.4);
-    ctx.fillStyle = '#dfe6ee';
-    ctx.fillRect(x + w / 2 - 10, groundY - TILE * 1.25, 20, 16);
-    // enseigne
-    ctx.fillStyle = '#1d1f27';
-    ctx.fillRect(x + w / 2 - 52, groundY - TILE * 2.4 - 26, 104, 22);
-    ctx.fillStyle = '#ff7675';
-    ctx.font = `bold 14px ui-monospace, monospace`;
-    ctx.textAlign = 'center';
-    ctx.fillText('ESSENCE', x + w / 2, groundY - TILE * 2.4 - 10);
+    if (id === 'sell') {
+      // ── Comptoir de vente ──
+      const h = TILE * 2.2;
+      ctx.fillStyle = '#8d6e63';
+      ctx.fillRect(x, groundY - h, w, h);
+      // porte + fenêtre
+      ctx.fillStyle = '#4e342e';
+      ctx.fillRect(x + w * 0.62, groundY - TILE * 1.3, TILE * 0.8, TILE * 1.3);
+      ctx.fillStyle = '#ffe9a8';
+      ctx.fillRect(x + w * 0.14, groundY - TILE * 1.5, TILE * 0.9, TILE * 0.7);
+      // toit
+      ctx.fillStyle = '#c0392b';
+      ctx.beginPath();
+      ctx.moveTo(x - 10, groundY - h);
+      ctx.lineTo(x + w / 2, groundY - h - TILE * 0.9);
+      ctx.lineTo(x + w + 10, groundY - h);
+      ctx.closePath();
+      ctx.fill();
+      drawSign(ctx, x + w / 2, groundY - h + 22, 'VENTE', '#ffd54f');
+    } else if (id === 'fuel') {
+      // ── Pompe à essence ──
+      ctx.fillStyle = '#e67e22';
+      ctx.fillRect(x - 6, groundY - TILE * 2.4, w + 12, 14);
+      ctx.fillStyle = '#b0b6c2';
+      ctx.fillRect(x + 6, groundY - TILE * 2.4 + 14, 6, TILE * 2.4 - 14);
+      ctx.fillRect(x + w - 12, groundY - TILE * 2.4 + 14, 6, TILE * 2.4 - 14);
+      ctx.fillStyle = '#d63031';
+      ctx.fillRect(x + w / 2 - 16, groundY - TILE * 1.4, 32, TILE * 1.4);
+      ctx.fillStyle = '#dfe6ee';
+      ctx.fillRect(x + w / 2 - 10, groundY - TILE * 1.25, 20, 16);
+      drawSign(ctx, x + w / 2, groundY - TILE * 2.4 - 10, 'ESSENCE', '#ff7675');
+    } else {
+      // ── Atelier (améliorations + réparations) ──
+      const h = TILE * 2.4;
+      ctx.fillStyle = '#78838f';
+      ctx.fillRect(x, groundY - h, w, h);
+      // toit plat
+      ctx.fillStyle = '#525c66';
+      ctx.fillRect(x - 8, groundY - h - 10, w + 16, 12);
+      // porte de garage à lamelles
+      const dw = w * 0.52;
+      const dx = x + w * 0.08;
+      ctx.fillStyle = '#3c444d';
+      ctx.fillRect(dx, groundY - TILE * 1.6, dw, TILE * 1.6);
+      ctx.strokeStyle = '#28303a';
+      ctx.lineWidth = 2;
+      for (let i = 1; i < 5; i++) {
+        ctx.beginPath();
+        ctx.moveTo(dx, groundY - (TILE * 1.6 * i) / 5);
+        ctx.lineTo(dx + dw, groundY - (TILE * 1.6 * i) / 5);
+        ctx.stroke();
+      }
+      // fenêtre d'atelier
+      ctx.fillStyle = '#ffe9a8';
+      ctx.fillRect(x + w * 0.7, groundY - TILE * 1.45, TILE * 0.9, TILE * 0.65);
+      drawSign(ctx, x + w / 2, groundY - h + 16, 'ATELIER', '#7fd0ff');
+    }
   }
+}
+
+function drawSign(
+  ctx: CanvasRenderingContext2D,
+  cx: number,
+  textY: number,
+  text: string,
+  color: string,
+) {
+  const w = text.length * 11 + 20;
+  ctx.fillStyle = '#1d1f27';
+  ctx.fillRect(cx - w / 2, textY - 16, w, 22);
+  ctx.fillStyle = color;
+  ctx.font = 'bold 14px ui-monospace, monospace';
+  ctx.textAlign = 'center';
+  ctx.fillText(text, cx, textY);
   ctx.textAlign = 'left';
 }
 

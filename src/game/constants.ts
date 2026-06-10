@@ -1,7 +1,7 @@
 // ── Monde ────────────────────────────────────────────────────────────────────
 export const TILE = 44; // pixels par tuile
 export const WORLD_W = 32; // largeur du monde en tuiles
-export const SPAWN_X = 16;
+export const SPAWN_X = 28;
 export const SKY_LIMIT = -9; // altitude max de vol (en tuiles)
 
 export type OreId =
@@ -13,7 +13,14 @@ export type OreId =
   | 'emerald'
   | 'diamond';
 
-export type TileKind = 'empty' | 'dirt' | 'rock' | 'hardrock' | 'bedrock' | OreId;
+export type TileKind =
+  | 'empty'
+  | 'dirt'
+  | 'rock'
+  | 'hardrock'
+  | 'bedrock'
+  | 'foundation'
+  | OreId;
 
 export interface TileDef {
   name: string;
@@ -32,6 +39,7 @@ export const TILES: Record<TileKind, TileDef> = {
   rock: { name: 'Roche', hardness: 2.4, solid: true, diggable: true, base: '#75757e', speckle: '#5a5a63' },
   hardrock: { name: 'Roche dure', hardness: 4.6, solid: true, diggable: true, base: '#54545e', speckle: '#3e3e47' },
   bedrock: { name: 'Roche-mère', hardness: 0, solid: true, diggable: false, base: '#26262c', speckle: '#17171b' },
+  foundation: { name: 'Fondations', hardness: 0, solid: true, diggable: false, base: '#9aa1a8', speckle: '#7d848c' },
   coal: { name: 'Charbon', hardness: 1.4, solid: true, diggable: true, value: 9, base: '#7c5126', speckle: '#624018', gem: '#23232a' },
   iron: { name: 'Fer', hardness: 2.4, solid: true, diggable: true, value: 30, base: '#7c5126', speckle: '#624018', gem: '#d28b54' },
   silver: { name: 'Argent', hardness: 3, solid: true, diggable: true, value: 75, base: '#6e6e77', speckle: '#55555e', gem: '#dde2ec' },
@@ -46,14 +54,18 @@ export const ORE_IDS: OreId[] = ['coal', 'iron', 'silver', 'gold', 'ruby', 'emer
 // Bandes de profondeur : probabilité d'apparition par tuile, avec fondu aux bords
 export interface OreBand { ore: OreId; min: number; max: number; p: number }
 export const ORE_BANDS: OreBand[] = [
-  { ore: 'diamond', min: 500, max: Infinity, p: 0.016 },
-  { ore: 'emerald', min: 350, max: 900, p: 0.024 },
-  { ore: 'ruby', min: 220, max: 600, p: 0.034 },
-  { ore: 'gold', min: 120, max: 420, p: 0.05 },
-  { ore: 'silver', min: 60, max: 260, p: 0.06 },
-  { ore: 'iron', min: 14, max: 170, p: 0.08 },
-  { ore: 'coal', min: 2, max: 85, p: 0.11 },
+  { ore: 'diamond', min: 500, max: Infinity, p: 0.009 },
+  { ore: 'emerald', min: 350, max: 900, p: 0.013 },
+  { ore: 'ruby', min: 220, max: 600, p: 0.018 },
+  { ore: 'gold', min: 120, max: 420, p: 0.026 },
+  { ore: 'silver', min: 60, max: 260, p: 0.034 },
+  { ore: 'iron', min: 14, max: 170, p: 0.05 },
+  { ore: 'coal', min: 2, max: 85, p: 0.07 },
 ];
+
+// Poches de vide naturelles (grottes) : probabilité par tuile
+export const CAVE_MIN_DEPTH = 2;
+export const caveChance = (depth: number) => Math.min(0.1, 0.03 + depth * 0.0004);
 
 // ── Améliorations ────────────────────────────────────────────────────────────
 export interface Tier { name: string; price: number; stat: number }
@@ -74,6 +86,15 @@ export const TANK_TIERS: Tier[] = [
   { name: '280 L', price: 550, stat: 280 },
   { name: '450 L', price: 2200, stat: 450 },
   { name: '750 L', price: 8000, stat: 750 },
+];
+
+// stat = multiplicateur de vitesse de vol (jetpack)
+export const JETPACK_TIERS: Tier[] = [
+  { name: 'Standard', price: 0, stat: 1 },
+  { name: 'Turbine', price: 200, stat: 1.3 },
+  { name: 'Biréacteur', price: 900, stat: 1.6 },
+  { name: 'Vectoriel', price: 3600, stat: 2 },
+  { name: 'Ionique', price: 13000, stat: 2.5 },
 ];
 
 // stat = points de coque
@@ -109,8 +130,12 @@ export const DIG_BASE_TIME = 0.6; // s par point de dureté, foreuse standard
 export const DIG_DEPTH_FACTOR = 0.003; // durcissement du sol avec la profondeur
 
 // ── Bâtiments de surface (plages de tuiles en x) ─────────────────────────────
-export const SHOP_RANGE: [number, number] = [3, 7];
-export const PUMP_RANGE: [number, number] = [10, 13];
+export type BuildingId = 'sell' | 'fuel' | 'garage';
+export const BUILDINGS: { id: BuildingId; range: [number, number] }[] = [
+  { id: 'sell', range: [2, 5] }, // vente des minerais
+  { id: 'fuel', range: [8, 11] }, // pompe à essence
+  { id: 'garage', range: [20, 24] }, // améliorations + réparations
+];
 
 export function digTime(kind: TileKind, depth: number, drillTier: number): number {
   return (
