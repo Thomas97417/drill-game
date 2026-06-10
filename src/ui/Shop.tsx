@@ -38,6 +38,7 @@ export function Shop() {
   const teleporters = useGameStore((s) => s.teleporters);
   const dynamites = useGameStore((s) => s.dynamites);
   const sellAll = useGameStore((s) => s.sellAll);
+  const sellOre = useGameStore((s) => s.sellOre);
   const buyFuel = useGameStore((s) => s.buyFuel);
   const repairHull = useGameStore((s) => s.repairHull);
   const buyUpgrade = useGameStore((s) => s.buyUpgrade);
@@ -51,10 +52,12 @@ export function Shop() {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => {
       if (e.code === 'Escape' || e.code === 'KeyE') closeShop();
+      if (e.code === 'KeyV' && ui === 'sell') sellAll();
+      if (e.code === 'KeyF' && ui === 'fuel') buyFuel(Infinity);
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [open, closeShop]);
+  }, [open, ui, closeShop, sellAll, buyFuel]);
 
   if (!open) return null;
 
@@ -93,12 +96,17 @@ export function Shop() {
                         <td>×{cargo[id]}</td>
                         <td>{fmt(TILES[id].value ?? 0)} $ / u.</td>
                         <td className="right">{fmt((cargo[id] ?? 0) * (TILES[id].value ?? 0))} $</td>
+                        <td className="right">
+                          <button className="btn btn-small" onClick={() => sellOre(id)}>
+                            Vendre
+                          </button>
+                        </td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
                 <button className="btn btn-primary" onClick={sellAll}>
-                  Tout vendre — {fmt(total)} $
+                  Tout vendre [V] — {fmt(total)} $
                 </button>
               </>
             )}
@@ -126,7 +134,7 @@ export function Shop() {
                 disabled={missingFuel <= 0 || money < 1}
                 onClick={() => buyFuel(Infinity)}
               >
-                Plein ({fmt(missingFuel * FUEL_PRICE)} $)
+                Plein [F] ({fmt(missingFuel * FUEL_PRICE)} $)
               </button>
             </div>
           </div>

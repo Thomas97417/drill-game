@@ -283,7 +283,7 @@ export class Engine {
       this.smokeTimer -= dt;
       if (this.smokeTimer <= 0) {
         this.smokeTimer = 0.16;
-        const exs = p.facing > 0 ? p.x + p.w * 0.12 : p.x + p.w * 0.82;
+        const exs = p.facing > 0 ? p.x + p.w * 0.3 : p.x + p.w * 0.7;
         this.particles.push({
           x: exs,
           y: p.y - 0.1,
@@ -327,6 +327,8 @@ export class Engine {
     useGameStore.setState({ fuel, hull, depth, maxDepth, nearBuilding, day });
 
     if (nearBuilding && this.input.consume('interact')) store.openShop(nearBuilding);
+    if (nearBuilding === 'sell' && this.input.consume('sell')) store.sellAll();
+    if (nearBuilding === 'fuel' && this.input.consume('refuel')) store.buyFuel(Infinity);
 
     if (hull <= 0) store.triggerRescue('hull');
     else if (fuel <= 0 && p.grounded) store.triggerRescue('fuel');

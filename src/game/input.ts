@@ -8,6 +8,8 @@ const BINDINGS = {
   teleport: ['KeyT'],
   dynamite: ['KeyX'],
   inventory: ['KeyI'],
+  sell: ['KeyV'],
+  refuel: ['KeyF'],
 } as const;
 
 type Action = keyof typeof BINDINGS;

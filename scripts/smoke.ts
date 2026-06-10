@@ -40,6 +40,7 @@ interface Snap {
   day: number;
   ui: string;
   coal: number;
+  iron: number;
 }
 const snap = (): Promise<Snap> =>
   page.evaluate(() => {
@@ -58,6 +59,7 @@ const snap = (): Promise<Snap> =>
       day: s.day,
       ui: s.ui,
       coal: s.cargo.coal ?? 0,
+      iron: s.cargo.iron ?? 0,
     };
   });
 
@@ -122,6 +124,7 @@ await page.screenshot({ path: '/tmp/drill-2-digging.png' });
 await page.evaluate(() => {
   const add = (window as any).__store.getState().addCargo;
   for (let i = 0; i < 140; i++) add('coal');
+  for (let i = 0; i < 10; i++) add('iron');
 });
 
 // ── Remonter au jetpack : Haut+Gauche pour glisser sous le plafond
@@ -161,9 +164,15 @@ check(
   'comptoir de vente ouvert avec [E]',
 );
 await page.screenshot({ path: '/tmp/drill-3-shop.png' });
-await page.click('button:has-text("Tout vendre")');
+// vente individuelle : uniquement le fer
+await page.click('.sell-table tr:has-text("Fer") button');
 s = await snap();
-check(s.money >= 1200 && s.coal === 0, `vente de la cargaison (${s.money} $)`);
+check(s.money === 300 && s.iron === 0 && s.coal === 140, 'vente individuelle du fer (+300 $)');
+// raccourci V : vend tout le reste
+await page.keyboard.press('KeyV');
+await page.waitForTimeout(300);
+s = await snap();
+check(s.money >= 1500 && s.coal === 0, `tout vendu avec [V] (${s.money} $)`);
 
 // E doit fermer le menu sans le rouvrir aussitôt
 await page.keyboard.press('KeyE');
@@ -197,9 +206,10 @@ check(
   (await page.locator('.modal.shop:has-text("Station essence")').count()) > 0,
   'station essence ouverte avec [E]',
 );
-await page.click('button:has-text("Plein")');
+await page.keyboard.press('KeyF');
+await page.waitForTimeout(300);
 s = await snap();
-check(s.fuel >= 99.5, `plein d'essence (${s.fuel.toFixed(1)} L)`);
+check(s.fuel >= 99.5, `plein d'essence avec [F] (${s.fuel.toFixed(1)} L)`);
 await page.keyboard.press('Escape');
 await page.waitForTimeout(200);
 

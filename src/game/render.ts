@@ -646,21 +646,42 @@ function drawPlayer(e: Engine, ctx: CanvasRenderingContext2D, camPxX: number, ca
     ctx.fill();
   }
 
-  // flamme du jetpack (deux couches + halo)
+  // jetpack monté à l'arrière du véhicule, en porte-à-faux derrière les chenilles
+  const rear = p.facing > 0 ? -1 : 1;
+  const packX = rear * w * 0.63;
+  // flamme sous la tuyère, inclinée vers l'arrière
   if (p.flying) {
     const f = 0.65 + Math.sin(e.time * 42) * 0.25;
-    const glow = ctx.createRadialGradient(0, h * 0.7, 2, 0, h * 0.7, h * 0.9);
-    glow.addColorStop(0, 'rgba(255,160,60,0.5)');
+    ctx.save();
+    ctx.translate(packX, h * 0.28);
+    ctx.rotate(rear * 0.24);
+    const glow = ctx.createRadialGradient(0, h * 0.25, 2, 0, h * 0.25, h * 0.85);
+    glow.addColorStop(0, 'rgba(255,160,60,0.55)');
     glow.addColorStop(1, 'rgba(255,160,60,0)');
     ctx.fillStyle = glow;
-    ctx.fillRect(-w, 0, w * 2, h * 1.8);
+    ctx.fillRect(-w * 0.8, -h * 0.1, w * 1.6, h * 1.5);
     ctx.fillStyle = '#ff7b2d';
-    flame(ctx, -w * 0.24, h / 2, w * 0.48, h * 0.7 * f);
+    flame(ctx, -w * 0.14, 0, w * 0.28, h * 0.66 * f);
     ctx.fillStyle = '#ffd166';
-    flame(ctx, -w * 0.14, h / 2, w * 0.28, h * 0.45 * f);
+    flame(ctx, -w * 0.085, 0, w * 0.17, h * 0.42 * f);
     ctx.fillStyle = '#fff6da';
-    flame(ctx, -w * 0.06, h / 2, w * 0.12, h * 0.22 * f);
+    flame(ctx, -w * 0.04, 0, w * 0.08, h * 0.2 * f);
+    ctx.restore();
   }
+  // réacteur dorsal : corps, liseré clair, sangle, tuyère
+  ctx.fillStyle = '#3a3e49';
+  roundRect(ctx, packX - w * 0.11, -h * 0.24, w * 0.22, h * 0.44, 4);
+  ctx.fillStyle = '#5d6573';
+  roundRect(ctx, packX - w * 0.11, -h * 0.24, w * 0.08, h * 0.44, 4);
+  ctx.fillStyle = '#23262e';
+  ctx.fillRect(packX - w * 0.13, -h * 0.06, w * 0.26, 4);
+  ctx.beginPath();
+  ctx.moveTo(packX - w * 0.07, h * 0.2);
+  ctx.lineTo(packX + w * 0.07, h * 0.2);
+  ctx.lineTo(packX + w * 0.1, h * 0.3);
+  ctx.lineTo(packX - w * 0.1, h * 0.3);
+  ctx.closePath();
+  ctx.fill();
 
   // chenilles avec maillons animés
   ctx.fillStyle = '#23262e';
@@ -700,8 +721,8 @@ function drawPlayer(e: Engine, ctx: CanvasRenderingContext2D, camPxX: number, ca
   const gs = dir === 'left' ? w * 0.16 : -w * 0.34;
   for (let i = 0; i < 3; i++) ctx.fillRect(gs, -h * 0.16 + i * 5, w * 0.18, 2);
 
-  // échappement
-  const exs = dir === 'left' ? w * 0.34 : -w * 0.42;
+  // échappement (recentré, le jetpack occupe l'arrière)
+  const exs = rear * w * 0.2 - 3.5;
   ctx.fillStyle = '#3a3e49';
   ctx.fillRect(exs, -h * 0.5, 7, h * 0.26);
   ctx.fillStyle = '#23262e';

@@ -8,6 +8,7 @@ import {
   REPAIR_PRICE,
   TANK_TIERS,
   TELEPORTER_PRICE,
+  TILES,
   cargoValue,
   type BuildingId,
   type OreId,
@@ -45,6 +46,7 @@ interface GameStore {
 
   addCargo: (ore: OreId) => void;
   sellAll: () => void;
+  sellOre: (ore: OreId) => void;
   buyFuel: (liters: number) => void;
   repairHull: () => void;
   buyUpgrade: (kind: UpgradeKind) => void;
@@ -111,6 +113,15 @@ export const useGameStore = create<GameStore>((set) => ({
 
   sellAll: () =>
     set((s) => ({ money: s.money + cargoValue(s.cargo), cargo: {} })),
+
+  sellOre: (ore) =>
+    set((s) => {
+      const count = s.cargo[ore] ?? 0;
+      if (count === 0) return s;
+      const cargo = { ...s.cargo };
+      delete cargo[ore];
+      return { money: s.money + count * (TILES[ore].value ?? 0), cargo };
+    }),
 
   buyFuel: (liters) =>
     set((s) => {
