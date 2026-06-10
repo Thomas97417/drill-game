@@ -22,6 +22,7 @@ export type TileKind =
   | 'bedrock'
   | 'foundation'
   | 'boulder'
+  | 'lava'
   | OreId;
 
 export interface TileDef {
@@ -43,6 +44,7 @@ export const TILES: Record<TileKind, TileDef> = {
   bedrock: { name: 'Roche-mère', hardness: 0, solid: true, diggable: false, base: '#26262c', speckle: '#17171b' },
   foundation: { name: 'Fondations', hardness: 0, solid: true, diggable: false, base: '#9aa1a8', speckle: '#7d848c' },
   boulder: { name: 'Rocher', hardness: 0, solid: true, diggable: false, base: '#6b6258', speckle: '#4f463d' },
+  lava: { name: 'Lave', hardness: 2, solid: true, diggable: true, base: '#3a1408', speckle: '#7a2410', gem: '#ff7b2d' },
   coal: { name: 'Charbon', hardness: 1.4, solid: true, diggable: true, value: 9, base: '#7c5126', speckle: '#624018', gem: '#23232a' },
   iron: { name: 'Fer', hardness: 2.4, solid: true, diggable: true, value: 30, base: '#7c5126', speckle: '#624018', gem: '#d28b54' },
   silver: { name: 'Argent', hardness: 3, solid: true, diggable: true, value: 75, base: '#6e6e77', speckle: '#55555e', gem: '#dde2ec' },
@@ -75,6 +77,12 @@ export const caveChance = (depth: number) => Math.min(0.1, 0.03 + depth * 0.0004
 export const BOULDER_MIN_DEPTH = 60;
 export const boulderChance = (depth: number) =>
   Math.min(0.05, 0.012 + (depth - BOULDER_MIN_DEPTH) * 0.0002);
+
+// Lave : forer dedans brûle la coque ; de plus en plus fréquente en profondeur
+export const LAVA_MIN_DEPTH = 120;
+export const lavaChance = (depth: number) =>
+  Math.min(0.07, 0.008 + (depth - LAVA_MIN_DEPTH) * 0.00012);
+export const LAVA_DPS = 20; // dégâts de coque par seconde de forage dans la lave
 
 // ── Dynamite ─────────────────────────────────────────────────────────────────
 export const DYNAMITE_PRICE = 150;

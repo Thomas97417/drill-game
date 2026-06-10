@@ -11,6 +11,7 @@ import {
   GRAVITY,
   HULL_DMG_FACTOR,
   JETPACK_TIERS,
+  LAVA_DPS,
   MAX_FALL,
   MAX_FLY,
   MOVE_SPEED,
@@ -239,6 +240,10 @@ export class Engine {
       }
       const d = this.digging;
       d.progress += dt;
+      // forer dans la lave brûle la coque
+      if (this.world.getTile(d.x, d.y) === 'lava') {
+        hull = Math.max(0, hull - LAVA_DPS * HULL_DMG_FACTOR[store.upgrades.hull] * dt);
+      }
       // forage vers le bas : la foreuse s'aligne sur la colonne attaquée.
       // Pas d'alignement vertical en forage latéral : remonter la foreuse la
       // décollerait du sol et annulerait le forage à chaque frame.

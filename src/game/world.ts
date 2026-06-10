@@ -2,11 +2,13 @@ import {
   BOULDER_MIN_DEPTH,
   BUILDINGS,
   CAVE_MIN_DEPTH,
+  LAVA_MIN_DEPTH,
   ORE_BANDS,
   TILES,
   WORLD_W,
   boulderChance,
   caveChance,
+  lavaChance,
   type TileDef,
   type TileKind,
 } from './constants';
@@ -92,6 +94,11 @@ export class World {
       // rochers : seuls les explosifs en viennent à bout
       if (y >= BOULDER_MIN_DEPTH && rng() < boulderChance(y)) {
         row[x] = 'boulder';
+        continue;
+      }
+      // poches de lave, de plus en plus fréquentes en profondeur
+      if (y >= LAVA_MIN_DEPTH && rng() < lavaChance(y)) {
+        row[x] = 'lava';
         continue;
       }
       const hardChance = y > 120 ? Math.min(0.5, (y - 120) * 0.003) : 0;

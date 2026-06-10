@@ -6,7 +6,16 @@ import { ORE_IDS, TILE, type TileKind } from './constants';
 import { hash2D, mulberry32 } from './rng';
 
 const VARIANTS = 4;
-const KINDS: TileKind[] = ['dirt', 'rock', 'hardrock', 'bedrock', 'foundation', 'boulder', ...ORE_IDS];
+const KINDS: TileKind[] = [
+  'dirt',
+  'rock',
+  'hardrock',
+  'bedrock',
+  'foundation',
+  'boulder',
+  'lava',
+  ...ORE_IDS,
+];
 const P = 4; // taille du « gros pixel »
 const G = Math.ceil(TILE / P); // cellules par côté
 
@@ -71,6 +80,9 @@ function paintTile(ctx: CanvasRenderingContext2D, kind: TileKind, rng: Rng) {
       break;
     case 'boulder':
       paintBoulder(ctx, rng);
+      break;
+    case 'lava':
+      paintLava(ctx, rng);
       break;
     case 'coal':
       paintDirt(ctx, rng);
@@ -241,6 +253,45 @@ function paintBoulder(ctx: CanvasRenderingContext2D, rng: Rng) {
     ctx.lineTo(TILE * (0.4 + rng() * 0.3), TILE * (0.5 + rng() * 0.3));
     ctx.stroke();
   }
+}
+
+// ── Lave : bain incandescent qui remplit la case ─────────────────────────────
+
+function paintLava(ctx: CanvasRenderingContext2D, rng: Rng) {
+  // magma orange vif sur toute la tuile
+  noiseFill(ctx, rng, ['#c93312', '#e8481c', '#ff5a1f', '#ff7b2d'], [0.22, 0.34, 0.3, 0.14]);
+  // coulées plus claires
+  for (let i = 0; i < 3; i++) {
+    let cx = Math.floor(rng() * G);
+    let cy = 1 + Math.floor(rng() * (G - 2));
+    for (let s = 0; s < 7; s++) {
+      cell(ctx, Math.max(0, Math.min(G - 1, cx)), Math.max(0, Math.min(G - 1, cy)), '#ff9a3d');
+      cx += rng() < 0.7 ? 1 : 0;
+      cy += rng() < 0.35 ? (rng() < 0.5 ? -1 : 1) : 0;
+      if (cx >= G) break;
+    }
+  }
+  // bulles jaunes brillantes
+  for (let i = 0; i < 5; i++) {
+    const cx = 1 + Math.floor(rng() * (G - 2));
+    const cy = 1 + Math.floor(rng() * (G - 2));
+    cell(ctx, cx, cy, '#ffd166');
+    ctx.fillStyle = '#fff3c4';
+    ctx.fillRect(cx * P + 1, cy * P + 1, 2, 2);
+  }
+  // quelques plaques de croûte refroidie
+  for (let i = 0; i < 3; i++) {
+    const cx = Math.floor(rng() * (G - 1));
+    const cy = Math.floor(rng() * (G - 1));
+    cell(ctx, cx, cy, '#8a2410');
+    if (rng() < 0.5) cell(ctx, cx + 1, cy, '#7a2410');
+  }
+  // fine croûte sombre en bordure : le bloc se lit comme une case danger
+  ctx.fillStyle = 'rgba(70,18,6,0.8)';
+  ctx.fillRect(0, 0, TILE, 3);
+  ctx.fillRect(0, TILE - 3, TILE, 3);
+  ctx.fillRect(0, 0, 3, TILE);
+  ctx.fillRect(TILE - 3, 0, 3, TILE);
 }
 
 // ── Minerais ─────────────────────────────────────────────────────────────────

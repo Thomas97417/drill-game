@@ -262,6 +262,21 @@ function drawTiles(
 
       drawTileSprite(ctx, kind, x, y, px, py);
 
+      // la lave palpite et irradie
+      if (kind === 'lava') {
+        const pulse = 0.5 + 0.5 * Math.sin(e.time * 2.6 + (x * 7 + y * 13) * 0.7);
+        ctx.fillStyle = `rgba(255,220,120,${0.05 + 0.12 * pulse})`;
+        ctx.fillRect(px, py, TILE, TILE);
+        const g = ctx.createRadialGradient(
+          px + TILE / 2, py + TILE / 2, TILE * 0.3,
+          px + TILE / 2, py + TILE / 2, TILE * 1.1,
+        );
+        g.addColorStop(0, `rgba(255,120,45,${0.1 + 0.1 * pulse})`);
+        g.addColorStop(1, 'rgba(255,120,45,0)');
+        ctx.fillStyle = g;
+        ctx.fillRect(px - TILE * 0.6, py - TILE * 0.6, TILE * 2.2, TILE * 2.2);
+      }
+
       // relief selon les voisins (pas pour le rocher, déjà détouré)
       if (kind !== 'boulder') {
         const openAbove = e.world.getTile(x, y - 1) === 'empty' && y > 0;

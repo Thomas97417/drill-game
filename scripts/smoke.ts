@@ -297,6 +297,21 @@ await page.waitForTimeout(400);
 s = await snap();
 check(s.depth === 0 && s.teleporters === 0, 'téléportation vers la surface');
 
+// ── Lave : forer dedans endommage la coque ────────────────────────────────
+const hullBefore = (await snap()).hull;
+await page.evaluate(() => {
+  const e = (window as any).__engine;
+  const col = Math.floor(e.player.x + e.player.w / 2);
+  e.world.getTile(col, 0); // force la génération de la ligne
+  e.world.rows.get(0)[col] = 'lava';
+});
+await holdUntil(page, 'ArrowDown', (st) => st.depth >= 1, 8000);
+s = await snap();
+check(
+  s.hull < hullBefore,
+  `la lave brûle la coque (${hullBefore.toFixed(0)} → ${s.hull.toFixed(0)} PV)`,
+);
+
 // ── Persistance : recharger la page ───────────────────────────────────────
 const moneySaved = s.money;
 await page.waitForTimeout(1000);

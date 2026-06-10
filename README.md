@@ -30,8 +30,9 @@ cargaison), la **station essence** (refaire le plein) et l'**atelier**
 (réparations, améliorations — vitesse de forage, réservoir, coque — et
 téléporteurs d'urgence).
 
-Attention aux chutes (dégâts de coque) et à la panne sèche : le sauvetage vous
-ramène à la surface mais la cargaison est perdue. La partie est sauvegardée
+Attention aux chutes (dégâts de coque), aux **poches de lave** (forer dedans
+brûle la coque — elles se multiplient passé ~120 m) et à la panne sèche : le
+sauvetage vous ramène à la surface mais la cargaison est perdue. La partie est sauvegardée
 automatiquement dans le navigateur (localStorage).
 
 ## Architecture
