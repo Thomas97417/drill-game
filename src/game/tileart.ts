@@ -59,6 +59,15 @@ export function drawTileSprite(
   ctx.drawImage(atlas, v * TILE, row * TILE, TILE, TILE, px, py, TILE, TILE);
 }
 
+// Icône de tuile pour l'UI (boutique, inventaire) — même sprite que le monde
+export function drawTileIcon(ctx: CanvasRenderingContext2D, kind: TileKind, size: number) {
+  initTileAtlas();
+  const row = rowOf.get(kind);
+  if (atlas === null || row === undefined) return;
+  ctx.imageSmoothingEnabled = false;
+  ctx.drawImage(atlas, 0, row * TILE, TILE, TILE, 0, 0, size, size);
+}
+
 // ── Peinture des matériaux ───────────────────────────────────────────────────
 
 function paintTile(ctx: CanvasRenderingContext2D, kind: TileKind, rng: Rng) {
@@ -94,7 +103,7 @@ function paintTile(ctx: CanvasRenderingContext2D, kind: TileKind, rng: Rng) {
       break;
     case 'silver':
       paintRock(ctx, rng, ['#565660', '#6f6f79', '#7d7d88', '#8b8b96'], 3);
-      paintVeins(ctx, rng, '#dde2ec', '#a9b2c4', '#ffffff');
+      paintNuggets(ctx, rng, '#c9d0db', '#838c9a', '#f2f6fb');
       break;
     case 'gold':
       paintRock(ctx, rng, ['#565660', '#6f6f79', '#7d7d88', '#8b8b96'], 3);
@@ -296,91 +305,98 @@ function paintLava(ctx: CanvasRenderingContext2D, rng: Rng) {
 
 // ── Minerais ─────────────────────────────────────────────────────────────────
 
+// éclat en croix, façon étincelle de dessin animé
+function sparkle(ctx: CanvasRenderingContext2D, x: number, y: number, r: number, color: string) {
+  ctx.fillStyle = color;
+  ctx.fillRect(x - r, y - 1, r * 2, 2);
+  ctx.fillRect(x - 1, y - r, 2, r * 2);
+  ctx.fillRect(x - 2, y - 2, 4, 4);
+}
+
+// gros amas de minerai détouré (ombre + tons + glint)
+function chunk(
+  ctx: CanvasRenderingContext2D,
+  rng: Rng,
+  cx: number,
+  cy: number,
+  s: number,
+  dark: string,
+  mid: string,
+  light: string,
+) {
+  // détourage sombre
+  for (let dy = -1; dy <= s; dy++)
+    for (let dx = -1; dx <= s; dx++) {
+      if (dx >= 0 && dx < s && dy >= 0 && dy < s) continue;
+      if (rng() < 0.55) cell(ctx, cx + dx, cy + dy, 'rgba(0,0,0,0.35)');
+    }
+  for (let dy = 0; dy < s; dy++)
+    for (let dx = 0; dx < s; dx++) {
+      const lit = -dx * 0.5 - dy * 0.7 + s * 0.5 + rng() * 0.4;
+      cell(ctx, cx + dx, cy + dy, lit > s * 0.42 ? light : lit > 0 ? mid : dark);
+    }
+}
+
 function paintCoal(ctx: CanvasRenderingContext2D, rng: Rng) {
-  for (let i = 0; i < 4; i++) {
-    const cx = 1 + Math.floor(rng() * (G - 4));
-    const cy = 1 + Math.floor(rng() * (G - 4));
-    const s = 2 + Math.floor(rng() * 2);
-    for (let dy = 0; dy < s; dy++)
-      for (let dx = 0; dx < s - (dy > 1 ? 1 : 0); dx++) cell(ctx, cx + dx, cy + dy, '#1c1c22');
-    cell(ctx, cx, cy, '#3a3a44'); // reflet mat
-    cell(ctx, cx + s - 1, cy + s - 1, '#0d0d11'); // ombre
+  for (let i = 0; i < 3; i++) {
+    const cx = 1 + Math.floor(rng() * (G - 5));
+    const cy = 1 + Math.floor(rng() * (G - 5));
+    chunk(ctx, rng, cx, cy, 3, '#0d0d12', '#1f1f28', '#3c3c4a');
   }
 }
 
 function paintIron(ctx: CanvasRenderingContext2D, rng: Rng) {
-  // bandes rouillées
   for (let i = 0; i < 3; i++) {
-    let cx = Math.floor(rng() * (G - 5));
-    let cy = 2 + Math.floor(rng() * (G - 4));
-    for (let s = 0; s < 4; s++) {
-      cell(ctx, cx, cy, '#b3713e');
-      cell(ctx, cx, cy - 1, '#d28b54');
-      cell(ctx, cx + 1, cy, '#8a5026');
-      cx += 1;
-      if (rng() < 0.5) cy += rng() < 0.5 ? -1 : 1;
-    }
-  }
-}
-
-function paintVeins(ctx: CanvasRenderingContext2D, rng: Rng, mid: string, dark: string, light: string) {
-  for (let i = 0; i < 3; i++) {
-    let cx = Math.floor(rng() * (G - 5));
-    let cy = Math.floor(rng() * (G - 2));
-    for (let s = 0; s < 5; s++) {
-      cell(ctx, cx, cy, mid);
-      if (rng() < 0.5) cell(ctx, cx, cy + 1, dark);
-      cx += 1;
-      cy += rng() < 0.6 ? 1 : 0;
-      if (cx >= G || cy >= G) break;
-    }
-    ctx.fillStyle = light;
-    ctx.fillRect(Math.min(G - 1, cx - 3) * P + 1, Math.max(0, cy - 2) * P + 1, 2, 2);
+    const cx = 1 + Math.floor(rng() * (G - 5));
+    const cy = 1 + Math.floor(rng() * (G - 5));
+    chunk(ctx, rng, cx, cy, 3, '#7a4218', '#c97a3e', '#f0b27e');
   }
 }
 
 function paintNuggets(ctx: CanvasRenderingContext2D, rng: Rng, mid: string, dark: string, light: string) {
-  for (let i = 0; i < 4; i++) {
-    const cx = 1 + Math.floor(rng() * (G - 3));
-    const cy = 1 + Math.floor(rng() * (G - 3));
-    cell(ctx, cx, cy, mid);
-    cell(ctx, cx + 1, cy, mid);
-    cell(ctx, cx, cy + 1, dark);
-    cell(ctx, cx + 1, cy + 1, dark);
-    ctx.fillStyle = light;
-    ctx.fillRect(cx * P + 1, cy * P + 1, 2, 2);
+  for (let i = 0; i < 3; i++) {
+    const cx = 1 + Math.floor(rng() * (G - 5));
+    const cy = 1 + Math.floor(rng() * (G - 5));
+    chunk(ctx, rng, cx, cy, 3, dark, mid, light);
   }
 }
 
 function paintCrystals(ctx: CanvasRenderingContext2D, rng: Rng, mid: string, dark: string, light: string) {
-  for (let i = 0; i < 3; i++) {
-    const x = (2 + rng() * (G - 6)) * P;
-    const y = (2.5 + rng() * (G - 6)) * P;
-    const r = (1.6 + rng() * 1.2) * P;
+  for (let i = 0; i < 2; i++) {
+    const x = (3 + rng() * (G - 7)) * P;
+    const y = (3.5 + rng() * (G - 7)) * P;
+    const r = (2.2 + rng() * 1.2) * P;
+    // halo lumineux derrière le cristal
+    const halo = ctx.createRadialGradient(x, y, 2, x, y, r * 2.1);
+    halo.addColorStop(0, mid + '66');
+    halo.addColorStop(1, mid + '00');
+    ctx.fillStyle = halo;
+    ctx.fillRect(x - r * 2.2, y - r * 2.2, r * 4.4, r * 4.4);
     // ombre portée
-    ctx.fillStyle = 'rgba(0,0,0,0.4)';
+    ctx.fillStyle = 'rgba(0,0,0,0.45)';
     ctx.beginPath();
-    ctx.ellipse(x + 2, y + r * 0.8, r * 0.9, r * 0.35, 0, 0, Math.PI * 2);
+    ctx.ellipse(x + 2, y + r * 0.85, r * 0.95, r * 0.35, 0, 0, Math.PI * 2);
     ctx.fill();
     // facette sombre (droite)
     ctx.fillStyle = dark;
     ctx.beginPath();
     ctx.moveTo(x, y - r);
-    ctx.lineTo(x + r * 0.8, y);
-    ctx.lineTo(x, y + r * 0.8);
+    ctx.lineTo(x + r * 0.85, y);
+    ctx.lineTo(x, y + r * 0.85);
     ctx.closePath();
     ctx.fill();
     // facette claire (gauche)
     ctx.fillStyle = mid;
     ctx.beginPath();
     ctx.moveTo(x, y - r);
-    ctx.lineTo(x - r * 0.8, y);
-    ctx.lineTo(x, y + r * 0.8);
+    ctx.lineTo(x - r * 0.85, y);
+    ctx.lineTo(x, y + r * 0.85);
     ctx.closePath();
     ctx.fill();
-    // arête + spéculaire
+    // arête, spéculaire et étincelle
     ctx.fillStyle = light;
-    ctx.fillRect(x - 1, y - r, 2, r * 1.7);
-    ctx.fillRect(x - r * 0.45, y - r * 0.3, 3, 3);
+    ctx.fillRect(x - 1, y - r, 2, r * 1.8);
+    ctx.fillRect(x - r * 0.5, y - r * 0.3, 3, 3);
+    sparkle(ctx, x + r * 0.55, y - r * 0.55, 4, '#ffffff');
   }
 }

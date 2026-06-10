@@ -14,6 +14,7 @@ import {
   fmt,
 } from '../game/constants';
 import { isBuilding, maxFuelOf, maxHullOf, useGameStore, type UpgradeKind } from '../store';
+import { OreIcon } from './OreIcon';
 
 const UPGRADE_ROWS: { kind: UpgradeKind; title: string; tiers: typeof DRILL_TIERS; statLabel: (s: number) => string }[] = [
   { kind: 'drill', title: '⚙️ Foreuse (vitesse)', tiers: DRILL_TIERS, statLabel: (s) => `×${s}` },
@@ -89,8 +90,8 @@ export function Shop() {
                   <tbody>
                     {cargoEntries.map((id) => (
                       <tr key={id}>
-                        <td>
-                          <span className="cargo-dot" style={{ background: TILES[id].gem }} />
+                        <td className="ore-cell">
+                          <OreIcon kind={id} size={30} />
                           {TILES[id].name}
                         </td>
                         <td>×{cargo[id]}</td>

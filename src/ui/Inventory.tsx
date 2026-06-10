@@ -10,6 +10,7 @@ import {
   fmt,
 } from '../game/constants';
 import { useGameStore } from '../store';
+import { OreIcon } from './OreIcon';
 
 export function Inventory() {
   const ui = useGameStore((s) => s.ui);
@@ -61,8 +62,8 @@ export function Inventory() {
             <tbody>
               {cargoEntries.map((id) => (
                 <tr key={id}>
-                  <td>
-                    <span className="cargo-dot" style={{ background: TILES[id].gem }} />
+                  <td className="ore-cell">
+                    <OreIcon kind={id} size={24} />
                     {TILES[id].name}
                   </td>
                   <td>×{cargo[id]}</td>

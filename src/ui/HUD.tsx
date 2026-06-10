@@ -1,5 +1,6 @@
 import { ORE_IDS, TILES, cargoValue, fmt } from '../game/constants';
 import { maxFuelOf, maxHullOf, useGameStore } from '../store';
+import { OreIcon } from './OreIcon';
 
 function Bar({
   label,
@@ -104,7 +105,7 @@ export function HUD() {
             <>
               {cargoEntries.map((id) => (
                 <span key={id} className="cargo-item">
-                  <span className="cargo-dot" style={{ background: TILES[id].gem }} />
+                  <OreIcon kind={id} size={18} />
                   {TILES[id].name} ×{cargo[id]}
                 </span>
               ))}

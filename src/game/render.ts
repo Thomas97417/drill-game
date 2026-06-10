@@ -262,6 +262,20 @@ function drawTiles(
 
       drawTileSprite(ctx, kind, x, y, px, py);
 
+      // les gemmes scintillent pour attirer l'œil
+      if (kind === 'ruby' || kind === 'emerald' || kind === 'diamond') {
+        const phase = hash2D(x, y, 401) * Math.PI * 2;
+        const tw = Math.max(0, Math.sin(e.time * 2.2 + phase));
+        if (tw > 0.55) {
+          const sx = px + 8 + hash2D(x, y, 409) * (TILE - 16);
+          const sy = py + 8 + hash2D(x, y, 419) * (TILE - 16);
+          const a = (tw - 0.55) / 0.45;
+          ctx.fillStyle = `rgba(255,255,255,${a * 0.9})`;
+          ctx.fillRect(sx - 4, sy - 1, 8, 2);
+          ctx.fillRect(sx - 1, sy - 4, 2, 8);
+        }
+      }
+
       // la lave palpite et irradie
       if (kind === 'lava') {
         const pulse = 0.5 + 0.5 * Math.sin(e.time * 2.6 + (x * 7 + y * 13) * 0.7);
