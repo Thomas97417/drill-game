@@ -46,13 +46,14 @@ export class World {
   }
 
   // Détruit tous les blocs dans le rayon (rochers compris, mais pas la
-  // roche-mère ni les fondations) ; renvoie les tuiles détruites
+  // roche-mère, les fondations ni la lave) ; renvoie les tuiles détruites
   blast(cx: number, cy: number, radius: number): { x: number; y: number; kind: TileKind }[] {
     const destroyed: { x: number; y: number; kind: TileKind }[] = [];
     for (let ty = Math.max(0, Math.floor(cy - radius)); ty <= Math.ceil(cy + radius); ty++) {
       for (let tx = Math.floor(cx - radius); tx <= Math.ceil(cx + radius); tx++) {
         const kind = this.getTile(tx, ty);
-        if (kind === 'empty' || kind === 'bedrock' || kind === 'foundation') continue;
+        if (kind === 'empty' || kind === 'bedrock' || kind === 'foundation' || kind === 'lava')
+          continue;
         const dx = tx + 0.5 - cx;
         const dy = ty + 0.5 - cy;
         if (dx * dx + dy * dy > radius * radius) continue;
