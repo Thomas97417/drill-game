@@ -652,7 +652,7 @@ function drawDynamites(e: Engine, ctx: CanvasRenderingContext2D, camPxX: number,
 // ── Foreuse ──────────────────────────────────────────────────────────────────
 
 // Habillage de la caisse par palier de coque : Tôle, Acier, Titane, Composite, Nanoblindage
-const HULL_STYLES = [
+export const HULL_STYLES = [
   { dark: '#8c2f20', mid: '#c0492f', light: '#e2603f', trim: null },
   { dark: '#3e4a5c', mid: '#5a6b82', light: '#84a0c0', trim: null },
   { dark: '#5d6166', mid: '#8d9398', light: '#c9cfd5', trim: null },
@@ -662,7 +662,7 @@ const HULL_STYLES = [
 
 // Réacteur dorsal par palier — palettes alignées sur HULL_STYLES :
 // Standard, Turbine, Biréacteur (2 tuyères), Vectoriel (ailerons + or), Ionique (flamme cyan)
-const JET_STYLES = [
+export const JET_STYLES = [
   { body: '#3a3e49', lite: '#5d6573', dark: '#23262e', trim: null, nozzles: 1, scale: 1, flame: ['#ff7b2d', '#ffd166', '#fff6da'], glow: 'rgba(255,160,60,0.55)' },
   { body: '#5a6b82', lite: '#84a0c0', dark: '#2a3340', trim: null, nozzles: 1, scale: 1.08, flame: ['#ff7b2d', '#ffd166', '#fff6da'], glow: 'rgba(255,160,60,0.55)' },
   { body: '#8d9398', lite: '#c9cfd5', dark: '#5d6166', trim: null, nozzles: 2, scale: 1.16, flame: ['#ff7b2d', '#ffd166', '#fff6da'], glow: 'rgba(255,160,60,0.55)' },
@@ -671,7 +671,7 @@ const JET_STYLES = [
 ] as const;
 
 // Trépan par palier : Standard, Acier, Carbure, Diamantée, Plasma
-const DRILL_STYLES = [
+export const DRILL_STYLES = [
   { light: '#eef1f6', mid: '#b7bdc9', dark: '#7d8493', tip: '#4d525f', spires: 3, len: 0.46, glow: null },
   { light: '#f4f8ff', mid: '#c7d2e4', dark: '#8896b0', tip: '#2f4d80', spires: 3, len: 0.52, glow: null },
   { light: '#efe7d3', mid: '#c0b394', dark: '#857a5e', tip: '#c9862e', spires: 4, len: 0.58, glow: null },

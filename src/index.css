@@ -169,6 +169,20 @@ body {
   gap: 8px;
 }
 
+.upgrade-next {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.upgrade-icon {
+  image-rendering: pixelated;
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(0, 0, 0, 0.5);
+  border-radius: 6px;
+  padding: 2px;
+}
+
 .cargo-total {
   font-weight: bold;
   color: #ffd54f;

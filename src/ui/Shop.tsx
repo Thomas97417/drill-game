@@ -15,6 +15,7 @@ import {
 } from '../game/constants';
 import { isBuilding, maxFuelOf, maxHullOf, useGameStore, type UpgradeKind } from '../store';
 import { OreIcon } from './OreIcon';
+import { UpgradeIcon } from './UpgradeIcon';
 
 const UPGRADE_ROWS: { kind: UpgradeKind; title: string; tiers: typeof DRILL_TIERS; statLabel: (s: number) => string }[] = [
   { kind: 'drill', title: '⚙️ Foreuse (vitesse)', tiers: DRILL_TIERS, statLabel: (s) => `×${s}` },
@@ -171,13 +172,16 @@ export function Shop() {
                     </div>
                   </div>
                   {next ? (
-                    <button
-                      className="btn"
-                      disabled={money < next.price}
-                      onClick={() => buyUpgrade(kind)}
-                    >
-                      {next.name} ({statLabel(next.stat)}) — {fmt(next.price)} $
-                    </button>
+                    <div className="upgrade-next">
+                      <UpgradeIcon kind={kind} tier={lvl + 1} />
+                      <button
+                        className="btn"
+                        disabled={money < next.price}
+                        onClick={() => buyUpgrade(kind)}
+                      >
+                        {next.name} ({statLabel(next.stat)}) — {fmt(next.price)} $
+                      </button>
+                    </div>
                   ) : (
                     <span className="dim">Niveau max</span>
                   )}
