@@ -1,9 +1,11 @@
 import {
+  BOULDER_MIN_DEPTH,
   BUILDINGS,
   CAVE_MIN_DEPTH,
   ORE_BANDS,
   TILES,
   WORLD_W,
+  boulderChance,
   caveChance,
   type TileDef,
   type TileKind,
@@ -41,6 +43,24 @@ export class World {
     return TILES[kind];
   }
 
+  // Détruit tous les blocs dans le rayon (rochers compris, mais pas la
+  // roche-mère ni les fondations) ; renvoie les tuiles détruites
+  blast(cx: number, cy: number, radius: number): { x: number; y: number; kind: TileKind }[] {
+    const destroyed: { x: number; y: number; kind: TileKind }[] = [];
+    for (let ty = Math.max(0, Math.floor(cy - radius)); ty <= Math.ceil(cy + radius); ty++) {
+      for (let tx = Math.floor(cx - radius); tx <= Math.ceil(cx + radius); tx++) {
+        const kind = this.getTile(tx, ty);
+        if (kind === 'empty' || kind === 'bedrock' || kind === 'foundation') continue;
+        const dx = tx + 0.5 - cx;
+        const dy = ty + 0.5 - cy;
+        if (dx * dx + dy * dy > radius * radius) continue;
+        this.dug.add(ty * WORLD_W + tx);
+        destroyed.push({ x: tx, y: ty, kind });
+      }
+    }
+    return destroyed;
+  }
+
   private row(y: number): TileKind[] {
     let r = this.rows.get(y);
     if (!r) {
@@ -67,6 +87,11 @@ export class World {
       // grottes : poches de vide naturelles
       if (y >= CAVE_MIN_DEPTH && rng() < caveChance(y)) {
         row[x] = 'empty';
+        continue;
+      }
+      // rochers : seuls les explosifs en viennent à bout
+      if (y >= BOULDER_MIN_DEPTH && rng() < boulderChance(y)) {
+        row[x] = 'boulder';
         continue;
       }
       const hardChance = y > 120 ? Math.min(0.5, (y - 120) * 0.003) : 0;

@@ -15,11 +15,57 @@ export function render(e: Engine) {
   drawBuildings(ctx, camPxX, camPxY);
   drawDepthMarkers(ctx, e.camY, H, camPxX, camPxY);
   drawDigOverlay(e, ctx, camPxX, camPxY);
+  drawDynamites(e, ctx, camPxX, camPxY);
   drawPlayer(e, ctx, camPxX, camPxY);
   drawParticles(e, ctx, camPxX, camPxY);
 }
 
+// ── Dynamites : bâton rouge, mèche qui crépite, clignote avant l'explosion ──
+
+function drawDynamites(e: Engine, ctx: CanvasRenderingContext2D, camPxX: number, camPxY: number) {
+  for (const d of e.dynamites) {
+    const px = d.x * TILE - camPxX;
+    const py = d.y * TILE - camPxY;
+    const blink = d.fuse < 1 && Math.sin(e.time * 35) > 0;
+    ctx.fillStyle = blink ? '#ffffff' : '#d63031';
+    ctx.fillRect(px - 4, py - 8, 8, 16);
+    ctx.strokeStyle = '#7a5230';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(px, py - 8);
+    ctx.quadraticCurveTo(px + 5, py - 14, px + 2, py - 16);
+    ctx.stroke();
+    // étincelle
+    ctx.fillStyle = Math.sin(e.time * 50) > 0 ? '#ffe28a' : '#ff9f43';
+    ctx.fillRect(px, py - 18, 4, 4);
+  }
+}
+
 // ── Fond : ciel au-dessus de y=0, terre sombre en dessous ───────────────────
+
+// Teinte du sous-sol selon la profondeur : brun-noir, puis vert sombre,
+// bleu nuit, violet et enfin rouge — toujours assez sombre
+const DEPTH_TINTS: { d: number; c: [number, number, number] }[] = [
+  { d: 0, c: [48, 32, 18] },
+  { d: 80, c: [26, 34, 18] },
+  { d: 160, c: [18, 62, 32] },
+  { d: 300, c: [18, 38, 86] },
+  { d: 460, c: [56, 24, 90] },
+  { d: 640, c: [96, 20, 24] },
+];
+
+function depthTint(depth: number): [number, number, number] {
+  const d = Math.max(0, depth);
+  let prev = DEPTH_TINTS[0];
+  for (const stop of DEPTH_TINTS) {
+    if (d <= stop.d) {
+      const t = stop.d === prev.d ? 0 : (d - prev.d) / (stop.d - prev.d);
+      return prev.c.map((v, i) => v + (stop.c[i] - v) * t) as [number, number, number];
+    }
+    prev = stop;
+  }
+  return prev.c;
+}
 
 function drawBackground(
   ctx: CanvasRenderingContext2D,
@@ -28,14 +74,12 @@ function drawBackground(
   camY: number,
   camPxY: number,
 ) {
-  // sous-sol de plus en plus sombre avec la profondeur
-  const depth = Math.max(0, camY) / 250;
-  const k = Math.min(1, depth);
-  const top = lerpColor([43, 28, 16], [10, 6, 3], k);
-  const bot = lerpColor([32, 20, 11], [6, 4, 2], k);
+  // dégradé entre la teinte de profondeur du haut et du bas de l'écran
+  const top = depthTint(camY);
+  const bot = depthTint(camY + H / TILE);
   const g = ctx.createLinearGradient(0, 0, 0, H);
-  g.addColorStop(0, top);
-  g.addColorStop(1, bot);
+  g.addColorStop(0, rgb(top));
+  g.addColorStop(1, rgb(bot));
   ctx.fillStyle = g;
   ctx.fillRect(0, 0, W, H);
 
@@ -113,6 +157,28 @@ function drawTile(
   openAbove: boolean,
 ) {
   const d = TILES[kind];
+
+  // rocher : bloc arrondi posé sur fond sombre, visuellement « non forable »
+  if (kind === 'boulder') {
+    ctx.fillStyle = '#241910';
+    ctx.fillRect(px, py, TILE, TILE);
+    ctx.fillStyle = d.base;
+    ctx.beginPath();
+    ctx.ellipse(px + TILE / 2, py + TILE / 2 + 2, TILE * 0.46, TILE * 0.42, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = 'rgba(255,255,255,0.14)';
+    ctx.beginPath();
+    ctx.ellipse(px + TILE * 0.38, py + TILE * 0.36, TILE * 0.16, TILE * 0.1, -0.5, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = d.speckle;
+    for (let i = 0; i < 4; i++) {
+      const gx = px + 10 + hash2D(x * 7 + i, y * 13, 61) * (TILE - 24);
+      const gy = py + 12 + hash2D(x * 11, y * 17 + i, 67) * (TILE - 26);
+      ctx.fillRect(gx, gy, 4, 4);
+    }
+    return;
+  }
+
   ctx.fillStyle = d.base;
   ctx.fillRect(px, py, TILE, TILE);
 
@@ -427,7 +493,6 @@ function roundRect(
   ctx.fill();
 }
 
-function lerpColor(a: [number, number, number], b: [number, number, number], t: number): string {
-  const c = a.map((v, i) => Math.round(v + (b[i] - v) * t));
-  return `rgb(${c[0]},${c[1]},${c[2]})`;
+function rgb(c: [number, number, number]): string {
+  return `rgb(${Math.round(c[0])},${Math.round(c[1])},${Math.round(c[2])})`;
 }

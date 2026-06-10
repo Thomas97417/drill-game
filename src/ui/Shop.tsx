@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import {
   DRILL_TIERS,
+  DYNAMITE_PRICE,
   FUEL_PRICE,
   HULL_TIERS,
   JETPACK_TIERS,
@@ -35,11 +36,13 @@ export function Shop() {
   const hull = useGameStore((s) => s.hull);
   const upgrades = useGameStore((s) => s.upgrades);
   const teleporters = useGameStore((s) => s.teleporters);
+  const dynamites = useGameStore((s) => s.dynamites);
   const sellAll = useGameStore((s) => s.sellAll);
   const buyFuel = useGameStore((s) => s.buyFuel);
   const repairHull = useGameStore((s) => s.repairHull);
   const buyUpgrade = useGameStore((s) => s.buyUpgrade);
   const buyTeleporter = useGameStore((s) => s.buyTeleporter);
+  const buyDynamite = useGameStore((s) => s.buyDynamite);
   const closeShop = useGameStore((s) => s.closeShop);
 
   const open = isBuilding(ui);
@@ -172,6 +175,22 @@ export function Shop() {
                 </div>
               );
             })}
+            <div className="upgrade-row">
+              <div>
+                <b>🧨 Dynamite</b>
+                <div className="dim">
+                  Détruit les blocs alentour — seul moyen de casser les rochers. Mèche de 3 s,
+                  éloignez-vous ! · en stock : ×{dynamites}
+                </div>
+              </div>
+              <button
+                className="btn"
+                disabled={money < DYNAMITE_PRICE}
+                onClick={buyDynamite}
+              >
+                Acheter — {fmt(DYNAMITE_PRICE)} $
+              </button>
+            </div>
             <div className="upgrade-row">
               <div>
                 <b>🌀 Téléporteur d'urgence</b>

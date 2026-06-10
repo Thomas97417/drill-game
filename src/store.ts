@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import {
   DRILL_TIERS,
+  DYNAMITE_PRICE,
   FUEL_PRICE,
   HULL_TIERS,
   JETPACK_TIERS,
@@ -13,7 +14,7 @@ import {
 } from './game/constants';
 import { loadSave } from './game/save';
 
-export type UiMode = 'playing' | 'rescue' | BuildingId;
+export type UiMode = 'playing' | 'rescue' | 'inventory' | BuildingId;
 export const isBuilding = (ui: UiMode): ui is BuildingId =>
   ui === 'sell' || ui === 'fuel' || ui === 'garage';
 export type UpgradeKind = 'drill' | 'tank' | 'hull' | 'jetpack';
@@ -32,13 +33,14 @@ interface GameStore {
   cargo: Partial<Record<OreId, number>>;
   upgrades: Upgrades;
   teleporters: number;
+  dynamites: number;
   depth: number;
   maxDepth: number;
   nearBuilding: BuildingId | null;
   ui: UiMode;
   rescueReason: 'fuel' | 'hull';
   // ordre à consommer par le moteur de jeu
-  pendingAction: 'teleport' | 'newgame' | null;
+  pendingAction: 'teleport' | 'newgame' | 'dynamite' | null;
 
   addCargo: (ore: OreId) => void;
   sellAll: () => void;
@@ -47,8 +49,11 @@ interface GameStore {
   buyUpgrade: (kind: UpgradeKind) => void;
   buyTeleporter: () => void;
   useTeleporter: () => void;
+  buyDynamite: () => void;
+  dropDynamite: () => void;
   openShop: (building: BuildingId) => void;
   closeShop: () => void;
+  toggleInventory: () => void;
   triggerRescue: (reason: 'fuel' | 'hull') => void;
   doRescue: () => void;
   newGame: () => void;
@@ -74,6 +79,7 @@ const freshState = () => ({
   cargo: {} as Partial<Record<OreId, number>>,
   upgrades: { drill: 0, tank: 0, hull: 0, jetpack: 0 },
   teleporters: 0,
+  dynamites: 0,
   depth: 0,
   maxDepth: 0,
   nearBuilding: null as BuildingId | null,
@@ -93,6 +99,7 @@ export const useGameStore = create<GameStore>((set) => ({
         // jetpack ?? 0 : sauvegardes antérieures à cette amélioration
         upgrades: { ...saved.upgrades, jetpack: saved.upgrades.jetpack ?? 0 },
         teleporters: saved.teleporters,
+        dynamites: saved.dynamites ?? 0,
         maxDepth: saved.maxDepth,
       }
     : {}),
@@ -133,6 +140,9 @@ export const useGameStore = create<GameStore>((set) => ({
       return {
         money: s.money - next.price,
         upgrades: { ...s.upgrades, [kind]: s.upgrades[kind] + 1 },
+        // un réservoir neuf arrive plein, une coque neuve arrive intacte
+        ...(kind === 'tank' ? { fuel: next.stat } : {}),
+        ...(kind === 'hull' ? { hull: next.stat } : {}),
       };
     }),
 
@@ -150,8 +160,31 @@ export const useGameStore = create<GameStore>((set) => ({
         : s,
     ),
 
+  buyDynamite: () =>
+    set((s) =>
+      s.money >= DYNAMITE_PRICE
+        ? { money: s.money - DYNAMITE_PRICE, dynamites: s.dynamites + 1 }
+        : s,
+    ),
+
+  dropDynamite: () =>
+    set((s) =>
+      s.dynamites > 0 && s.ui === 'playing'
+        ? { dynamites: s.dynamites - 1, pendingAction: 'dynamite' }
+        : s,
+    ),
+
   openShop: (building) => set({ ui: building }),
   closeShop: () => set((s) => (isBuilding(s.ui) ? { ui: 'playing' } : s)),
+
+  toggleInventory: () =>
+    set((s) =>
+      s.ui === 'inventory'
+        ? { ui: 'playing' }
+        : s.ui === 'playing'
+          ? { ui: 'inventory' }
+          : s,
+    ),
 
   triggerRescue: (reason) => set({ ui: 'rescue', rescueReason: reason }),
 

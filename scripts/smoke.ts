@@ -36,6 +36,7 @@ interface Snap {
   fuel: number;
   hull: number;
   teleporters: number;
+  dynamites: number;
   ui: string;
   coal: number;
 }
@@ -52,6 +53,7 @@ const snap = (): Promise<Snap> =>
       fuel: s.fuel,
       hull: s.hull,
       teleporters: s.teleporters,
+      dynamites: s.dynamites,
       ui: s.ui,
       coal: s.cargo.coal ?? 0,
     };
@@ -111,7 +113,7 @@ await page.screenshot({ path: '/tmp/drill-2-digging.png' });
 // minerais pour tester la vente (l'apparition naturelle est aléatoire)
 await page.evaluate(() => {
   const add = (window as any).__store.getState().addCargo;
-  for (let i = 0; i < 100; i++) add('coal');
+  for (let i = 0; i < 140; i++) add('coal');
 });
 
 // ── Remonter au jetpack : Haut+Gauche pour glisser sous le plafond
@@ -153,9 +155,24 @@ check(
 await page.screenshot({ path: '/tmp/drill-3-shop.png' });
 await page.click('button:has-text("Tout vendre")');
 s = await snap();
-check(s.money >= 880 && s.coal === 0, `vente de la cargaison (${s.money} $)`);
-await page.keyboard.press('Escape');
-await page.waitForTimeout(200);
+check(s.money >= 1200 && s.coal === 0, `vente de la cargaison (${s.money} $)`);
+
+// E doit fermer le menu sans le rouvrir aussitôt
+await page.keyboard.press('KeyE');
+await page.waitForTimeout(400);
+check((await snap()).ui === 'playing', 'fermeture du menu avec [E] (sans réouverture)');
+
+// ── Inventaire avec [I] ───────────────────────────────────────────────────
+await page.keyboard.press('KeyI');
+await page.waitForTimeout(300);
+check(
+  (await page.locator('.modal.inventory:has-text("Téléporteurs")').count()) > 0,
+  'inventaire ouvert avec [I]',
+);
+await page.screenshot({ path: '/tmp/drill-6-inventory.png' });
+await page.keyboard.press('KeyI');
+await page.waitForTimeout(400);
+check((await snap()).ui === 'playing', 'inventaire fermé avec [I]');
 
 // les fondations sous les bâtiments sont indestructibles
 await page.keyboard.down('ArrowDown');
@@ -198,9 +215,19 @@ check(s.money === moneyBefore - 150, 'achat amélioration foreuse (−150 $)');
 await page.click('.upgrade-row:has-text("Jetpack") button');
 s = await snap();
 check(s.money === moneyBefore - 150 - 200, 'achat amélioration jetpack (−200 $)');
+// un réservoir/une coque achetés arrivent pleins, sans repasser par la pompe
+await page.click('.upgrade-row:has-text("🛡 Coque") button');
+s = await snap();
+check(s.hull === 170, `coque neuve livrée intacte (${s.hull.toFixed(0)} / 170 PV)`);
+await page.click('.upgrade-row:has-text("Réservoir") button');
+s = await snap();
+check(s.fuel === 170, `réservoir neuf livré plein (${s.fuel.toFixed(0)} / 170 L)`);
 await page.click('.upgrade-row:has-text("Téléporteur") button');
 s = await snap();
 check(s.teleporters === 1, 'achat téléporteur');
+await page.click('.upgrade-row:has-text("Dynamite") button');
+s = await snap();
+check(s.dynamites === 1, 'achat dynamite');
 await page.screenshot({ path: '/tmp/drill-4-shop-upgrades.png' });
 
 await page.keyboard.press('Escape');
@@ -215,9 +242,38 @@ await page.keyboard.up('ArrowUp');
 check(vyFly < -8, `vol plus rapide après amélioration (${(-vyFly).toFixed(1)} t/s)`);
 await page.waitForTimeout(2000); // retombée
 
-// ── Recreuser (à l'écart des fondations) puis se téléporter ───────────────
+// ── Dynamite : largage [X], fuite au jetpack, explosion ───────────────────
 await walkTo(26.5);
-await holdUntil(page, 'ArrowDown', (st) => st.depth >= 3);
+await holdUntil(page, 'ArrowDown', (st) => st.depth >= 5);
+await page.keyboard.press('KeyX');
+await page.waitForTimeout(200);
+const dyn: { x: number; y: number } | null = await page.evaluate(() => {
+  const d = (window as any).__engine.dynamites[0];
+  return d ? { x: d.x, y: d.y } : null;
+});
+check(dyn !== null && (await snap()).dynamites === 0, 'dynamite larguée avec [X]');
+// on reste en vol au-dessus pendant toute la mèche, puis on redescend
+await page.keyboard.down('ArrowUp');
+await page.waitForTimeout(3400); // mèche de 3 s
+await page.keyboard.up('ArrowUp');
+await page.waitForTimeout(2000); // retombée
+const around: string[] = await page.evaluate(
+  ([dx, dy]) => {
+    const w = (window as any).__engine.world;
+    const tx = Math.floor(dx);
+    const ty = Math.floor(dy);
+    return [w.getTile(tx, ty), w.getTile(tx, ty + 1), w.getTile(tx + 1, ty), w.getTile(tx - 1, ty)];
+  },
+  [dyn!.x, dyn!.y],
+);
+check(
+  around.every((t) => t === 'empty'),
+  `explosion : blocs détruits autour (${around.join(', ')})`,
+);
+s = await snap();
+check(s.ui === 'playing' && s.depth > 0, 'la foreuse a survécu en s\'éloignant');
+
+// ── Téléportation ─────────────────────────────────────────────────────────
 await page.keyboard.press('KeyT');
 await page.waitForTimeout(400);
 s = await snap();

@@ -9,6 +9,7 @@ export interface SaveData {
   cargo: Partial<Record<OreId, number>>;
   upgrades: { drill: number; tank: number; hull: number; jetpack: number };
   teleporters: number;
+  dynamites: number;
   maxDepth: number;
   player: { x: number; y: number };
 }

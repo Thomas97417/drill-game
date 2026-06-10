@@ -6,6 +6,8 @@ const BINDINGS = {
   down: ['ArrowDown', 'KeyS'],
   interact: ['KeyE', 'Enter'],
   teleport: ['KeyT'],
+  dynamite: ['KeyX'],
+  inventory: ['KeyI'],
 } as const;
 
 type Action = keyof typeof BINDINGS;

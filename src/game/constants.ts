@@ -20,6 +20,7 @@ export type TileKind =
   | 'hardrock'
   | 'bedrock'
   | 'foundation'
+  | 'boulder'
   | OreId;
 
 export interface TileDef {
@@ -40,6 +41,7 @@ export const TILES: Record<TileKind, TileDef> = {
   hardrock: { name: 'Roche dure', hardness: 4.6, solid: true, diggable: true, base: '#54545e', speckle: '#3e3e47' },
   bedrock: { name: 'Roche-mère', hardness: 0, solid: true, diggable: false, base: '#26262c', speckle: '#17171b' },
   foundation: { name: 'Fondations', hardness: 0, solid: true, diggable: false, base: '#9aa1a8', speckle: '#7d848c' },
+  boulder: { name: 'Rocher', hardness: 0, solid: true, diggable: false, base: '#6b6258', speckle: '#4f463d' },
   coal: { name: 'Charbon', hardness: 1.4, solid: true, diggable: true, value: 9, base: '#7c5126', speckle: '#624018', gem: '#23232a' },
   iron: { name: 'Fer', hardness: 2.4, solid: true, diggable: true, value: 30, base: '#7c5126', speckle: '#624018', gem: '#d28b54' },
   silver: { name: 'Argent', hardness: 3, solid: true, diggable: true, value: 75, base: '#6e6e77', speckle: '#55555e', gem: '#dde2ec' },
@@ -66,6 +68,18 @@ export const ORE_BANDS: OreBand[] = [
 // Poches de vide naturelles (grottes) : probabilité par tuile
 export const CAVE_MIN_DEPTH = 2;
 export const caveChance = (depth: number) => Math.min(0.1, 0.03 + depth * 0.0004);
+
+// Rochers : infranchissables à la foreuse, seule la dynamite en vient à bout.
+// Ils n'apparaissent qu'à partir de la couche de l'argent.
+export const BOULDER_MIN_DEPTH = 60;
+export const boulderChance = (depth: number) =>
+  Math.min(0.05, 0.012 + (depth - BOULDER_MIN_DEPTH) * 0.0002);
+
+// ── Dynamite ─────────────────────────────────────────────────────────────────
+export const DYNAMITE_PRICE = 150;
+export const DYNAMITE_FUSE = 3; // secondes pour s'éloigner avant l'explosion
+export const DYNAMITE_RADIUS = 2.2; // rayon de destruction (tuiles)
+export const DYNAMITE_DMG = 80; // dégâts au centre, décroissants avec la distance
 
 // ── Améliorations ────────────────────────────────────────────────────────────
 export interface Tier { name: string; price: number; stat: number }
@@ -123,7 +137,7 @@ export const FALL_DMG_FACTOR = 6; // dégâts par tuile/s au-delà du seuil
 
 // Consommation d'essence (L/s) — rien n'est consommé à l'arrêt
 export const BURN_MOVE = 0.4;
-export const BURN_DIG = 0.7;
+export const BURN_DIG = 0.7; // par point de dureté, à la surface (voir digBurn)
 export const BURN_FLY = 1.2;
 
 export const DIG_BASE_TIME = 0.6; // s par point de dureté, foreuse standard
@@ -137,11 +151,17 @@ export const BUILDINGS: { id: BuildingId; range: [number, number] }[] = [
   { id: 'garage', range: [20, 24] }, // améliorations + réparations
 ];
 
+export function digDepthFactor(depth: number): number {
+  return 1 + Math.max(0, depth) * DIG_DEPTH_FACTOR;
+}
+
 export function digTime(kind: TileKind, depth: number, drillTier: number): number {
-  return (
-    (TILES[kind].hardness * DIG_BASE_TIME * (1 + Math.max(0, depth) * DIG_DEPTH_FACTOR)) /
-    DRILL_TIERS[drillTier].stat
-  );
+  return (TILES[kind].hardness * DIG_BASE_TIME * digDepthFactor(depth)) / DRILL_TIERS[drillTier].stat;
+}
+
+// Consommation pendant le forage : croît avec la dureté du bloc et la profondeur
+export function digBurn(kind: TileKind, depth: number): number {
+  return BURN_DIG * TILES[kind].hardness * digDepthFactor(depth);
 }
 
 export function cargoValue(cargo: Partial<Record<OreId, number>>): number {

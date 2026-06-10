@@ -37,10 +37,13 @@ export function HUD() {
   const cargo = useGameStore((s) => s.cargo);
   const upgrades = useGameStore((s) => s.upgrades);
   const teleporters = useGameStore((s) => s.teleporters);
+  const dynamites = useGameStore((s) => s.dynamites);
   const nearBuilding = useGameStore((s) => s.nearBuilding);
   const ui = useGameStore((s) => s.ui);
   const openShop = useGameStore((s) => s.openShop);
   const useTeleporter = useGameStore((s) => s.useTeleporter);
+  const dropDynamite = useGameStore((s) => s.dropDynamite);
+  const toggleInventory = useGameStore((s) => s.toggleInventory);
   const newGame = useGameStore((s) => s.newGame);
 
   const maxFuel = maxFuelOf(upgrades);
@@ -88,7 +91,11 @@ export function HUD() {
                 : 'Atelier'}
           </button>
         )}
-        <div className="panel cargo">
+        <div
+          className="panel cargo cargo-clickable"
+          onClick={toggleInventory}
+          title="Ouvrir l'inventaire [I]"
+        >
           {cargoEntries.length === 0 ? (
             <span className="dim">Soute vide</span>
           ) : (
@@ -108,6 +115,14 @@ export function HUD() {
       <div className="hud-bottom-right">
         <button
           className="btn"
+          disabled={dynamites === 0 || ui !== 'playing'}
+          onClick={dropDynamite}
+          title="Largue une dynamite sous la foreuse — mèche de 3 s"
+        >
+          🧨 Dynamite [X] ×{dynamites}
+        </button>
+        <button
+          className="btn"
           disabled={teleporters === 0 || depth === 0 || ui !== 'playing'}
           onClick={useTeleporter}
           title="Retour instantané à la surface"
@@ -117,7 +132,7 @@ export function HUD() {
       </div>
 
       <div className="hud-bottom-left dim">
-        ← → ↓ creuser · ↑ voler · E bâtiments · T téléporteur
+        ← → ↓ creuser · ↑ voler · E bâtiments · I inventaire · T téléporteur · X dynamite
       </div>
     </div>
   );

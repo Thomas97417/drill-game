@@ -19,6 +19,9 @@ bun run preview  # sert le build de production
 - **↑** : jetpack (consomme de l'essence)
 - **E** : entrer dans le bâtiment le plus proche (à la surface)
 - **T** : utiliser un téléporteur d'urgence
+- **X** : larguer une dynamite sous la foreuse (mèche de 3 s — éloignez-vous !) ;
+  c'est le seul moyen de détruire les **rochers**, mais l'explosion blesse
+  aussi la foreuse
 
 La boucle : creuser → récolter des minerais (charbon, fer, argent, or, rubis,
 émeraude, diamant — de plus en plus précieux avec la profondeur) → remonter →

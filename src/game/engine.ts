@@ -1,8 +1,10 @@
 import {
   BUILDINGS,
-  BURN_DIG,
   BURN_FLY,
   BURN_MOVE,
+  DYNAMITE_DMG,
+  DYNAMITE_FUSE,
+  DYNAMITE_RADIUS,
   FALL_DMG_FACTOR,
   FLY_ACCEL,
   GRAVITY,
@@ -17,6 +19,7 @@ import {
   TILE,
   TILES,
   WORLD_W,
+  digBurn,
   digTime,
   type BuildingId,
   type OreId,
@@ -49,6 +52,13 @@ export interface DigState {
   progress: number;
   total: number;
   dir: 'left' | 'right' | 'down';
+}
+
+export interface Dynamite {
+  x: number;
+  y: number;
+  vy: number;
+  fuse: number;
 }
 
 export interface Particle {
@@ -85,6 +95,7 @@ export class Engine {
   input = new Input();
   digging: DigState | null = null;
   particles: Particle[] = [];
+  dynamites: Dynamite[] = [];
   camX = 0;
   camY = 0;
   viewW = 800; // px CSS
@@ -96,6 +107,7 @@ export class Engine {
   private acc = 0;
   private saveTimer = 0;
   private digPartTimer = 0;
+  private wasPaused = false;
 
   constructor(canvas: HTMLCanvasElement) {
     this.canvas = canvas;
@@ -153,6 +165,7 @@ export class Engine {
 
     if (store.pendingAction) {
       if (store.pendingAction === 'teleport') this.teleportToSurface();
+      else if (store.pendingAction === 'dynamite') this.spawnDynamite();
       else this.resetWorld();
       store.clearPending();
     }
@@ -160,9 +173,16 @@ export class Engine {
     this.updateParticles(dt);
 
     if (store.ui !== 'playing') {
+      this.wasPaused = true;
       this.input.endFrame();
       this.updateCamera(dt);
       return;
+    }
+    if (this.wasPaused) {
+      // ignore les touches qui ont servi à fermer le menu (E, I…),
+      // sinon elles rouvriraient le panneau dans la même frame
+      this.wasPaused = false;
+      this.input.endFrame();
     }
 
     const p = this.player;
@@ -170,6 +190,8 @@ export class Engine {
     let hull = store.hull;
 
     if (this.input.consume('teleport')) store.useTeleporter();
+    if (this.input.consume('dynamite')) store.dropDynamite();
+    if (this.input.consume('inventory')) store.toggleInventory();
 
     const left = this.input.held('left');
     const right = this.input.held('right');
@@ -242,9 +264,17 @@ export class Engine {
       p.vy = Math.max(0, p.vy);
     }
 
+    // ── Dynamites : chute, mèche, explosion ──────────────────────────────────
+    const blastDmg = this.updateDynamites(dt);
+    if (blastDmg > 0) {
+      hull = Math.max(0, hull - blastDmg * HULL_DMG_FACTOR[store.upgrades.hull]);
+    }
+
     // ── Essence ──────────────────────────────────────────────────────────────
     let burn = 0;
-    if (this.digging) burn += BURN_DIG;
+    if (this.digging) {
+      burn += digBurn(this.world.getTile(this.digging.x, this.digging.y), this.digging.y);
+    }
     if (p.flying) burn += BURN_FLY;
     if (Math.abs(p.vx) > 0.1) burn += BURN_MOVE;
     fuel = Math.max(0, fuel - burn * dt);
@@ -400,7 +430,54 @@ export class Engine {
     this.player = makePlayer();
     this.digging = null;
     this.particles = [];
+    this.dynamites = [];
     this.snapCamera();
+  }
+
+  // ── Dynamite ───────────────────────────────────────────────────────────────
+
+  private spawnDynamite() {
+    const p = this.player;
+    this.dynamites.push({
+      x: p.x + p.w / 2,
+      y: p.y + p.h * 0.6,
+      vy: 1,
+      fuse: DYNAMITE_FUSE,
+    });
+  }
+
+  // Renvoie les dégâts d'explosion subis par la foreuse
+  private updateDynamites(dt: number): number {
+    let dmg = 0;
+    for (const d of this.dynamites) {
+      // chute jusqu'au premier bloc solide
+      d.vy = Math.min(MAX_FALL, d.vy + GRAVITY * dt);
+      let ny = d.y + d.vy * dt;
+      if (this.world.isSolid(Math.floor(d.x), Math.floor(ny + 0.18))) {
+        ny = Math.floor(ny + 0.18) - 0.18 - EPS;
+        d.vy = 0;
+      }
+      d.y = ny;
+      d.fuse -= dt;
+      if (d.fuse <= 0) dmg += this.explode(d);
+    }
+    this.dynamites = this.dynamites.filter((d) => d.fuse > 0);
+    return dmg;
+  }
+
+  private explode(d: Dynamite): number {
+    const destroyed = this.world.blast(d.x, d.y, DYNAMITE_RADIUS);
+    for (const t of destroyed) {
+      const def = TILES[t.kind];
+      this.emitBurst(t.x + 0.5, t.y + 0.5, def.gem ?? def.speckle, 3);
+    }
+    this.emitBurst(d.x, d.y, '#ff9f43', 24);
+    this.emitBurst(d.x, d.y, '#8d93a1', 14);
+    this.digging = null; // le terrain a pu changer sous la foreuse
+    const p = this.player;
+    const dist = Math.hypot(p.x + p.w / 2 - d.x, p.y + p.h / 2 - d.y);
+    const reach = DYNAMITE_RADIUS + 1;
+    return dist >= reach ? 0 : DYNAMITE_DMG * (1 - dist / reach);
   }
 
   saveGame() {
@@ -414,6 +491,7 @@ export class Engine {
       cargo: s.cargo,
       upgrades: s.upgrades,
       teleporters: s.teleporters,
+      dynamites: s.dynamites,
       maxDepth: s.maxDepth,
       player: { x: this.player.x, y: this.player.y },
     });

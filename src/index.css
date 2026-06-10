@@ -76,6 +76,8 @@ body {
 .hud-bottom-right {
   bottom: 12px;
   right: 12px;
+  display: flex;
+  gap: 8px;
   pointer-events: auto;
 }
 
@@ -165,6 +167,22 @@ body {
 .cargo-total {
   font-weight: bold;
   color: #ffd54f;
+}
+
+.cargo-clickable {
+  cursor: pointer;
+}
+
+.cargo-clickable:hover {
+  border-color: #ffd54f;
+}
+
+.inv-section {
+  margin: 14px 0 6px;
+  font-size: 14px;
+  color: #ffd54f;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+  padding-bottom: 4px;
 }
 
 /* ── Boutons ────────────────────────────────────────────────────────────── */
