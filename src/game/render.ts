@@ -1,6 +1,7 @@
 import { BUILDINGS, DAY_CYCLE, TILE, WORLD_W } from './constants';
 import { hash2D } from './rng';
 import { drawTileSprite } from './tileart';
+import { useGameStore } from '../store';
 import type { Engine } from './engine';
 
 export function render(e: Engine) {
@@ -621,6 +622,24 @@ function drawDynamites(e: Engine, ctx: CanvasRenderingContext2D, camPxX: number,
 
 // ── Foreuse ──────────────────────────────────────────────────────────────────
 
+// Habillage de la caisse par palier de coque : Tôle, Acier, Titane, Composite, Nanoblindage
+const HULL_STYLES = [
+  { dark: '#8c2f20', mid: '#c0492f', light: '#e2603f', trim: null },
+  { dark: '#3e4a5c', mid: '#5a6b82', light: '#84a0c0', trim: null },
+  { dark: '#5d6166', mid: '#8d9398', light: '#c9cfd5', trim: null },
+  { dark: '#2c3a26', mid: '#4c623c', light: '#7a9a5c', trim: '#c9a227' },
+  { dark: '#161822', mid: '#2c3046', light: '#4a5070', trim: '#7fe7f0' },
+] as const;
+
+// Trépan par palier : Standard, Acier, Carbure, Diamantée, Plasma
+const DRILL_STYLES = [
+  { light: '#eef1f6', mid: '#b7bdc9', dark: '#7d8493', tip: '#4d525f', spires: 3, len: 0.46, glow: null },
+  { light: '#f4f8ff', mid: '#c7d2e4', dark: '#8896b0', tip: '#2f4d80', spires: 3, len: 0.52, glow: null },
+  { light: '#efe7d3', mid: '#c0b394', dark: '#857a5e', tip: '#c9862e', spires: 4, len: 0.58, glow: null },
+  { light: '#f2feff', mid: '#aee8f2', dark: '#56aebf', tip: '#e8fdff', spires: 4, len: 0.64, glow: 'rgba(141,238,247,0.45)' },
+  { light: '#e9d4ff', mid: '#b67aff', dark: '#6a3aa8', tip: '#f3e8ff', spires: 5, len: 0.7, glow: 'rgba(194,107,255,0.55)' },
+] as const;
+
 function drawPlayer(e: Engine, ctx: CanvasRenderingContext2D, camPxX: number, camPxY: number) {
   const p = e.player;
   const w = p.w * TILE;
@@ -707,19 +726,45 @@ function drawPlayer(e: Engine, ctx: CanvasRenderingContext2D, camPxX: number, ca
     ctx.fill();
   }
 
-  // caisse : 3 tons + rivets
-  ctx.fillStyle = '#8c2f20';
+  // caisse : couleurs et blindages selon le palier de coque
+  const up = useGameStore.getState().upgrades;
+  const hs = HULL_STYLES[up.hull];
+  ctx.fillStyle = hs.dark;
   roundRect(ctx, -w / 2, -h * 0.28, w, h * 0.52, 6);
-  ctx.fillStyle = '#c0492f';
+  ctx.fillStyle = hs.mid;
   roundRect(ctx, -w / 2, -h * 0.28, w, h * 0.4, 6);
-  ctx.fillStyle = '#e2603f';
+  ctx.fillStyle = hs.light;
   roundRect(ctx, -w / 2, -h * 0.28, w, h * 0.16, 6);
-  ctx.fillStyle = '#74281b';
-  for (const rx of [-w * 0.36, -w * 0.12, w * 0.12, w * 0.36]) ctx.fillRect(rx, h * 0.08, 3, 3);
+  // rivets : de plus en plus nombreux
+  ctx.fillStyle = 'rgba(0,0,0,0.4)';
+  const nRivets = 4 + up.hull * 2;
+  for (let i = 0; i < nRivets; i++) {
+    ctx.fillRect(-w * 0.4 + (i * w * 0.8) / (nRivets - 1), h * 0.08, 3, 3);
+  }
   // grille latérale
-  ctx.fillStyle = 'rgba(60,20,14,0.7)';
+  ctx.fillStyle = 'rgba(0,0,0,0.38)';
   const gs = dir === 'left' ? w * 0.16 : -w * 0.34;
   for (let i = 0; i < 3; i++) ctx.fillRect(gs, -h * 0.16 + i * 5, w * 0.18, 2);
+  // palier 1+ : pare-chocs avant renforcé
+  if (up.hull >= 1) {
+    ctx.fillStyle = hs.light;
+    const fx = p.facing > 0 ? w * 0.46 : -w * 0.52;
+    roundRect(ctx, fx, -h * 0.12, w * 0.06, h * 0.34, 2);
+  }
+  // palier 2+ : plaque latérale boulonnée
+  if (up.hull >= 2) {
+    ctx.fillStyle = hs.light;
+    roundRect(ctx, -w * 0.2, -h * 0.18, w * 0.4, h * 0.28, 3);
+    ctx.fillStyle = hs.dark;
+    for (const [bx, by] of [
+      [-w * 0.16, -h * 0.14],
+      [w * 0.12, -h * 0.14],
+      [-w * 0.16, h * 0.04],
+      [w * 0.12, h * 0.04],
+    ] as const) {
+      ctx.fillRect(bx, by, 3, 3);
+    }
+  }
 
   // échappement (recentré, le jetpack occupe l'arrière)
   const exs = rear * w * 0.2 - 3.5;
@@ -742,10 +787,37 @@ function drawPlayer(e: Engine, ctx: CanvasRenderingContext2D, camPxX: number, ca
   ctx.beginPath();
   ctx.arc(cabX - w * 0.07, -h * 0.31, w * 0.07, Math.PI * 0.9, Math.PI * 1.7);
   ctx.fill();
+  // palier 3+ : visière blindée au-dessus de la verrière
+  if (up.hull >= 3) {
+    ctx.strokeStyle = hs.light;
+    ctx.lineWidth = 5;
+    ctx.beginPath();
+    ctx.arc(cabX, -h * 0.26, w * 0.27, Math.PI * 1.08, Math.PI * 1.92);
+    ctx.stroke();
+  }
+  // palier 4 : liseré énergétique sur la caisse
+  if (up.hull >= 4 && hs.trim) {
+    ctx.save();
+    ctx.strokeStyle = hs.trim;
+    ctx.lineWidth = 2;
+    ctx.shadowColor = hs.trim;
+    ctx.shadowBlur = 7 + Math.sin(e.time * 6) * 3;
+    ctx.beginPath();
+    ctx.roundRect(-w / 2 + 1, -h * 0.28 + 1, w - 2, h * 0.52 - 2, 6);
+    ctx.stroke();
+    ctx.restore();
+  } else if (hs.trim) {
+    // palier 3 : simple liseré doré
+    ctx.strokeStyle = hs.trim;
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.roundRect(-w / 2 + 1, -h * 0.28 + 1, w - 2, h * 0.52 - 2, 6);
+    ctx.stroke();
+  }
 
-  // trépan métallique animé
+  // trépan animé selon le palier de foreuse
   const spin = e.time * (e.digging ? 26 : 5);
-  drawDrillBit(ctx, dir, w, h, spin);
+  drawDrillBit(ctx, dir, w, h, spin, up.drill, e.time);
 
   ctx.restore();
 }
@@ -765,7 +837,10 @@ function drawDrillBit(
   w: number,
   h: number,
   spin: number,
+  tier: number,
+  time: number,
 ) {
+  const st = DRILL_STYLES[tier];
   ctx.save();
   if (dir === 'down') {
     ctx.translate(0, h * 0.34);
@@ -774,13 +849,21 @@ function drawDrillBit(
     ctx.translate(dir === 'right' ? w * 0.42 : -w * 0.42, 0);
     if (dir === 'left') ctx.scale(-1, 1);
   }
-  const len = w * 0.46;
-  const rad = h * 0.2;
-  // cône métallique
+  const len = w * st.len;
+  const rad = h * (0.2 + tier * 0.012);
+  // lueur des trépans haut de gamme (diamant, plasma)
+  if (st.glow) {
+    const g = ctx.createRadialGradient(len * 0.5, 0, 2, len * 0.5, 0, len * 0.9);
+    g.addColorStop(0, st.glow);
+    g.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = g;
+    ctx.fillRect(-len * 0.4, -len, len * 2, len * 2);
+  }
+  // cône
   const grad = ctx.createLinearGradient(0, -rad, 0, rad);
-  grad.addColorStop(0, '#eef1f6');
-  grad.addColorStop(0.5, '#b7bdc9');
-  grad.addColorStop(1, '#7d8493');
+  grad.addColorStop(0, st.light);
+  grad.addColorStop(0.5, st.mid);
+  grad.addColorStop(1, st.dark);
   ctx.fillStyle = grad;
   ctx.beginPath();
   ctx.moveTo(0, -rad);
@@ -788,11 +871,11 @@ function drawDrillBit(
   ctx.lineTo(len, 0);
   ctx.closePath();
   ctx.fill();
-  // spires en rotation
-  ctx.strokeStyle = '#5d6470';
+  // spires en rotation (plus nombreuses sur les bons trépans)
+  ctx.strokeStyle = st.dark;
   ctx.lineWidth = 2;
-  for (let i = 0; i < 3; i++) {
-    const t = ((spin * 0.12 + i / 3) % 1 + 1) % 1;
+  for (let i = 0; i < st.spires; i++) {
+    const t = ((spin * 0.12 + i / st.spires) % 1 + 1) % 1;
     const sx = t * len * 0.85;
     const sr = rad * (1 - sx / len);
     ctx.beginPath();
@@ -800,11 +883,24 @@ function drawDrillBit(
     ctx.lineTo(sx + 4, sr);
     ctx.stroke();
   }
-  // pointe durcie
-  ctx.fillStyle = '#4d525f';
+  // incrustations scintillantes (diamantée et plasma)
+  if (tier >= 3) {
+    ctx.fillStyle = tier === 4 ? '#f3e8ff' : '#ffffff';
+    for (let i = 0; i < 3; i++) {
+      const t = ((spin * 0.06 + i / 3) % 1 + 1) % 1;
+      const sx = 4 + t * len * 0.7;
+      const sr = rad * (1 - sx / len) * 0.5;
+      const tw = 0.5 + 0.5 * Math.sin(time * 9 + i * 2.1);
+      ctx.globalAlpha = 0.4 + tw * 0.6;
+      ctx.fillRect(sx, -sr, 3, 3);
+    }
+    ctx.globalAlpha = 1;
+  }
+  // pointe
+  ctx.fillStyle = st.tip;
   ctx.beginPath();
-  ctx.moveTo(len * 0.8, -rad * 0.2);
-  ctx.lineTo(len * 0.8, rad * 0.2);
+  ctx.moveTo(len * 0.78, -rad * 0.24);
+  ctx.lineTo(len * 0.78, rad * 0.24);
   ctx.lineTo(len, 0);
   ctx.closePath();
   ctx.fill();
