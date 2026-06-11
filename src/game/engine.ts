@@ -21,6 +21,7 @@ import {
   TILE,
   TILES,
   WORLD_W,
+  cargoCount,
   digBurn,
   digTime,
   type BuildingId,
@@ -30,7 +31,7 @@ import { Input } from './input';
 import { World } from './world';
 import { initTileAtlas } from './tileart';
 import { clearSave, loadSave, saveNow } from './save';
-import { useGameStore } from '../store';
+import { maxCargoOf, useGameStore } from '../store';
 import { render } from './render';
 
 const STEP = 1 / 60;
@@ -254,7 +255,15 @@ export class Engine {
       if (d.progress >= d.total) {
         const kind = this.world.getTile(d.x, d.y);
         const def = this.world.dig(d.x, d.y);
-        if (def?.value) store.addCargo(kind as OreId);
+        if (def?.value) {
+          const s = useGameStore.getState();
+          if (cargoCount(s.cargo) >= maxCargoOf(s.upgrades)) {
+            // soute pleine : le minerai s'éparpille, perdu
+            this.emitBurst(d.x + 0.5, d.y + 0.5, def.gem ?? def.speckle, 10);
+          } else {
+            store.addCargo(kind as OreId);
+          }
+        }
         this.digging = null;
       }
     } else {

@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import {
+  CARGO_TIERS,
   DRILL_TIERS,
   DYNAMITE_PRICE,
   FUEL_PRICE,
@@ -22,6 +23,7 @@ const UPGRADE_ROWS: { kind: UpgradeKind; title: string; tiers: typeof DRILL_TIER
   { kind: 'tank', title: '⛽ Réservoir', tiers: TANK_TIERS, statLabel: (s) => `${s} L` },
   { kind: 'hull', title: '🛡 Coque', tiers: HULL_TIERS, statLabel: (s) => `${s} PV` },
   { kind: 'jetpack', title: '🚀 Réacteur (vitesse de vol)', tiers: JETPACK_TIERS, statLabel: (s) => `×${s}` },
+  { kind: 'cargo', title: '📦 Soute (stockage)', tiers: CARGO_TIERS, statLabel: (s) => `${s} minerais` },
 ];
 
 const TITLES = {

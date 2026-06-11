@@ -51,6 +51,50 @@ body {
   gap: 8px;
 }
 
+.alerts {
+  top: 14px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+.fuel-alert,
+.cargo-alert {
+  border-radius: 8px;
+  padding: 8px 18px;
+  font-size: 14px;
+  font-weight: bold;
+  text-shadow: 0 1px 2px #000;
+  white-space: nowrap;
+  animation: alert-blink 1s infinite;
+}
+
+.fuel-alert {
+  background: rgba(150, 18, 18, 0.88);
+  border: 2px solid #ff5a4f;
+  color: #ffe9e7;
+}
+
+.cargo-alert {
+  background: rgba(150, 92, 12, 0.9);
+  border: 2px solid #ffb74f;
+  color: #fff3df;
+}
+
+.cargo-count-full {
+  color: #ffb74f;
+  font-weight: bold;
+}
+
+@keyframes alert-blink {
+  50% {
+    opacity: 0.55;
+  }
+}
+
 .hud-top-right {
   top: 12px;
   right: 12px;

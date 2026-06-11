@@ -15,6 +15,7 @@ export function UpgradeIcon({ kind, tier, size = 40 }: { kind: UpgradeKind; tier
     if (kind === 'drill') paintDrill(ctx, S, tier);
     else if (kind === 'hull') paintHull(ctx, S, tier);
     else if (kind === 'tank') paintTank(ctx, S, tier);
+    else if (kind === 'cargo') paintCargo(ctx, S, tier);
     else paintJet(ctx, S, tier);
   }, [kind, tier, size]);
 
@@ -154,6 +155,63 @@ function paintTank(ctx: CanvasRenderingContext2D, S: number, tier: number) {
   grad.addColorStop(1, '#f5a623');
   ctx.fillStyle = grad;
   ctx.fillRect(gx, y + 8 + gh - fh, gw, fh);
+}
+
+function paintCargo(ctx: CanvasRenderingContext2D, S: number, tier: number) {
+  const hs = HULL_STYLES[tier];
+  const grow = 1 + tier * 0.06;
+  const w = S * 0.7 * grow;
+  const h = S * 0.52 * grow;
+  const x = S / 2 - w / 2;
+  const y = S * 0.62 - h / 2;
+  // caisse aux couleurs du palier de coque équivalent
+  ctx.fillStyle = hs.dark;
+  ctx.beginPath();
+  ctx.roundRect(x - 3, y - 3, w + 6, h + 6, 7);
+  ctx.fill();
+  ctx.fillStyle = hs.mid;
+  ctx.beginPath();
+  ctx.roundRect(x, y, w, h, 5);
+  ctx.fill();
+  // couvercle
+  ctx.fillStyle = hs.light;
+  ctx.beginPath();
+  ctx.roundRect(x - 5, y - 6, w + 10, 10, 4);
+  ctx.fill();
+  // sangles verticales
+  ctx.fillStyle = hs.dark;
+  ctx.fillRect(x + w * 0.28, y, 4, h);
+  ctx.fillRect(x + w * 0.68, y, 4, h);
+  // compartiments : de plus en plus nombreux selon le palier
+  const slots = 3 + tier;
+  ctx.fillStyle = hs.light;
+  for (let i = 0; i < slots; i++) {
+    ctx.fillRect(x + 6 + ((w - 16) * i) / Math.max(1, slots - 1), y + h - 10, 5, 5);
+  }
+  // minerais qui dépassent du couvercle
+  const gems = ['#f6c945', '#ef3b58', '#8deef7'];
+  for (let i = 0; i <= Math.min(2, tier); i++) {
+    ctx.fillStyle = gems[i];
+    ctx.beginPath();
+    ctx.moveTo(x + w * (0.25 + i * 0.25), y - 13);
+    ctx.lineTo(x + w * (0.25 + i * 0.25) + 6, y - 6);
+    ctx.lineTo(x + w * (0.25 + i * 0.25) - 6, y - 6);
+    ctx.closePath();
+    ctx.fill();
+  }
+  // liseré des hauts paliers
+  if (hs.trim) {
+    ctx.strokeStyle = hs.trim;
+    ctx.lineWidth = 3;
+    if (tier >= 4) {
+      ctx.shadowColor = hs.trim;
+      ctx.shadowBlur = 8;
+    }
+    ctx.beginPath();
+    ctx.roundRect(x + 2, y + 2, w - 4, h - 4, 5);
+    ctx.stroke();
+    ctx.shadowBlur = 0;
+  }
 }
 
 function paintJet(ctx: CanvasRenderingContext2D, S: number, tier: number) {

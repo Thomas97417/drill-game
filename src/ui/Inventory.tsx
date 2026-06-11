@@ -1,15 +1,17 @@
 import { useEffect } from 'react';
 import {
+  CARGO_TIERS,
   DRILL_TIERS,
   HULL_TIERS,
   JETPACK_TIERS,
   ORE_IDS,
   TANK_TIERS,
   TILES,
+  cargoCount,
   cargoValue,
   fmt,
 } from '../game/constants';
-import { useGameStore } from '../store';
+import { maxCargoOf, useGameStore } from '../store';
 import { OreIcon } from './OreIcon';
 
 export function Inventory() {
@@ -41,6 +43,7 @@ export function Inventory() {
     { label: '⛽ Réservoir', tier: TANK_TIERS[upgrades.tank], stat: `${TANK_TIERS[upgrades.tank].stat} L` },
     { label: '🛡 Coque', tier: HULL_TIERS[upgrades.hull], stat: `${HULL_TIERS[upgrades.hull].stat} PV` },
     { label: '🚀 Réacteur', tier: JETPACK_TIERS[upgrades.jetpack], stat: `×${JETPACK_TIERS[upgrades.jetpack].stat}` },
+    { label: '📦 Soute', tier: CARGO_TIERS[upgrades.cargo], stat: `${CARGO_TIERS[upgrades.cargo].stat} minerais` },
   ];
 
   return (
@@ -54,7 +57,9 @@ export function Inventory() {
           </button>
         </div>
 
-        <h3 className="inv-section">Soute</h3>
+        <h3 className="inv-section">
+          Soute ({cargoCount(cargo)}/{maxCargoOf(upgrades)})
+        </h3>
         {cargoEntries.length === 0 ? (
           <p className="dim">Soute vide — la valeur de vos trouvailles s'affichera ici.</p>
         ) : (

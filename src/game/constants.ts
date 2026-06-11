@@ -216,7 +216,7 @@ export const boulderChance = (depth: number) =>
 export const LAVA_MIN_DEPTH = 350;
 export const lavaChance = (depth: number) =>
   Math.min(0.07, 0.008 + (depth - LAVA_MIN_DEPTH) * 0.00012);
-export const LAVA_DPS = 20; // dégâts de coque par seconde de forage dans la lave
+export const LAVA_DPS = 90; // dégâts de coque par seconde de forage dans la lave
 
 // ── Dynamite ─────────────────────────────────────────────────────────────────
 export const DYNAMITE_PRICE = 150;
@@ -256,6 +256,15 @@ export const JETPACK_TIERS: Tier[] = [
   { name: "Biréacteur", price: 900, stat: 1.6 },
   { name: "Vectoriel", price: 3600, stat: 2 },
   { name: "Ionique", price: 13000, stat: 2.5 },
+];
+
+// stat = capacité de la soute (nombre de minerais transportables)
+export const CARGO_TIERS: Tier[] = [
+  { name: "12 minerais", price: 0, stat: 12 },
+  { name: "20 minerais", price: 140, stat: 20 },
+  { name: "32 minerais", price: 600, stat: 32 },
+  { name: "50 minerais", price: 2500, stat: 50 },
+  { name: "80 minerais", price: 9000, stat: 80 },
 ];
 
 // stat = points de coque
@@ -331,6 +340,10 @@ export function cargoValue(cargo: Partial<Record<OreId, number>>): number {
     (sum, id) => sum + (cargo[id] ?? 0) * (TILES[id].value ?? 0),
     0,
   );
+}
+
+export function cargoCount(cargo: Partial<Record<OreId, number>>): number {
+  return ORE_IDS.reduce((n, id) => n + (cargo[id] ?? 0), 0);
 }
 
 export function fmt(n: number): string {

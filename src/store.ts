@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import {
+  CARGO_TIERS,
   DRILL_TIERS,
   DYNAMITE_PRICE,
   FUEL_PRICE,
@@ -9,6 +10,7 @@ import {
   TANK_TIERS,
   TELEPORTER_PRICE,
   TILES,
+  cargoCount,
   cargoValue,
   type BuildingId,
   type OreId,
@@ -18,13 +20,14 @@ import { loadSave } from './game/save';
 export type UiMode = 'playing' | 'rescue' | 'inventory' | BuildingId;
 export const isBuilding = (ui: UiMode): ui is BuildingId =>
   ui === 'sell' || ui === 'fuel' || ui === 'garage';
-export type UpgradeKind = 'drill' | 'tank' | 'hull' | 'jetpack';
+export type UpgradeKind = 'drill' | 'tank' | 'hull' | 'jetpack' | 'cargo';
 
 export interface Upgrades {
   drill: number;
   tank: number;
   hull: number;
   jetpack: number;
+  cargo: number;
 }
 
 interface GameStore {
@@ -65,12 +68,14 @@ interface GameStore {
 
 export const maxFuelOf = (u: Upgrades) => TANK_TIERS[u.tank].stat;
 export const maxHullOf = (u: Upgrades) => HULL_TIERS[u.hull].stat;
+export const maxCargoOf = (u: Upgrades) => CARGO_TIERS[u.cargo].stat;
 
 const TIERS = {
   drill: DRILL_TIERS,
   tank: TANK_TIERS,
   hull: HULL_TIERS,
   jetpack: JETPACK_TIERS,
+  cargo: CARGO_TIERS,
 } as const;
 
 const saved = loadSave();
@@ -80,7 +85,7 @@ const freshState = () => ({
   fuel: TANK_TIERS[0].stat,
   hull: HULL_TIERS[0].stat,
   cargo: {} as Partial<Record<OreId, number>>,
-  upgrades: { drill: 0, tank: 0, hull: 0, jetpack: 0 },
+  upgrades: { drill: 0, tank: 0, hull: 0, jetpack: 0, cargo: 0 },
   teleporters: 0,
   dynamites: 0,
   depth: 0,
@@ -100,8 +105,12 @@ export const useGameStore = create<GameStore>((set) => ({
         fuel: saved.fuel,
         hull: saved.hull,
         cargo: saved.cargo,
-        // jetpack ?? 0 : sauvegardes antérieures à cette amélioration
-        upgrades: { ...saved.upgrades, jetpack: saved.upgrades.jetpack ?? 0 },
+        // ?? 0 : sauvegardes antérieures à ces améliorations
+        upgrades: {
+          ...saved.upgrades,
+          jetpack: saved.upgrades.jetpack ?? 0,
+          cargo: saved.upgrades.cargo ?? 0,
+        },
         teleporters: saved.teleporters,
         dynamites: saved.dynamites ?? 0,
         maxDepth: saved.maxDepth,
@@ -109,7 +118,11 @@ export const useGameStore = create<GameStore>((set) => ({
     : {}),
 
   addCargo: (ore) =>
-    set((s) => ({ cargo: { ...s.cargo, [ore]: (s.cargo[ore] ?? 0) + 1 } })),
+    set((s) => {
+      // soute pleine : le minerai foré est perdu
+      if (cargoCount(s.cargo) >= maxCargoOf(s.upgrades)) return s;
+      return { cargo: { ...s.cargo, [ore]: (s.cargo[ore] ?? 0) + 1 } };
+    }),
 
   sellAll: () =>
     set((s) => ({ money: s.money + cargoValue(s.cargo), cargo: {} })),

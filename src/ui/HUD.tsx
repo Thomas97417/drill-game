@@ -1,5 +1,5 @@
-import { ORE_IDS, TILES, cargoValue, fmt } from '../game/constants';
-import { maxFuelOf, maxHullOf, useGameStore } from '../store';
+import { ORE_IDS, TILES, cargoCount, cargoValue, fmt } from '../game/constants';
+import { maxCargoOf, maxFuelOf, maxHullOf, useGameStore } from '../store';
 import { OreIcon } from './OreIcon';
 
 function Bar({
@@ -50,11 +50,27 @@ export function HUD() {
 
   const maxFuel = maxFuelOf(upgrades);
   const maxHull = maxHullOf(upgrades);
+  const maxCargo = maxCargoOf(upgrades);
+  const count = cargoCount(cargo);
+  const cargoFull = count >= maxCargo;
   const fuelLow = fuel / maxFuel < 0.25;
   const cargoEntries = ORE_IDS.filter((id) => (cargo[id] ?? 0) > 0);
 
   return (
     <div className="hud">
+      <div className="alerts">
+        {fuelLow && ui === 'playing' && (
+          <div className="fuel-alert">
+            ⚠ CARBURANT CRITIQUE — {fmt(fuel)} L restants
+            {depth > 0 ? ', remontez faire le plein !' : ' : passez à la pompe !'}
+          </div>
+        )}
+        {cargoFull && ui === 'playing' && (
+          <div className="cargo-alert">
+            ⚠ SOUTE PLEINE ({count}/{maxCargo}) — les minerais forés sont perdus !
+          </div>
+        )}
+      </div>
       <div className="hud-top-left panel">
         <Bar
           label="⛽"
@@ -99,18 +115,17 @@ export function HUD() {
           onClick={toggleInventory}
           title="Ouvrir l'inventaire [I]"
         >
-          {cargoEntries.length === 0 ? (
-            <span className="dim">Soute vide</span>
-          ) : (
-            <>
-              {cargoEntries.map((id) => (
-                <span key={id} className="cargo-item">
-                  <OreIcon kind={id} size={18} />
-                  {TILES[id].name} ×{cargo[id]}
-                </span>
-              ))}
-              <span className="cargo-total">≈ {fmt(cargoValue(cargo))} $</span>
-            </>
+          <span className={cargoFull ? 'cargo-count-full' : 'dim'}>
+            Soute {count}/{maxCargo}
+          </span>
+          {cargoEntries.map((id) => (
+            <span key={id} className="cargo-item">
+              <OreIcon kind={id} size={18} />
+              {TILES[id].name} ×{cargo[id]}
+            </span>
+          ))}
+          {cargoEntries.length > 0 && (
+            <span className="cargo-total">≈ {fmt(cargoValue(cargo))} $</span>
           )}
         </div>
       </div>

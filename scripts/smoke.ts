@@ -98,6 +98,27 @@ await page.waitForTimeout(1500);
 s = await snap();
 check(s.fuel === fuelIdle, `pas de consommation à l'arrêt (${s.fuel.toFixed(1)} L)`);
 
+// alerte carburant critique quand la jauge passe en rouge (< 25 %)
+await page.evaluate(() => (window as any).__store.setState({ fuel: 20 }));
+await page.waitForTimeout(200);
+check((await page.locator('.fuel-alert').count()) > 0, 'alerte carburant critique affichée');
+await page.evaluate(() => (window as any).__store.setState({ fuel: 100 }));
+await page.waitForTimeout(200);
+check((await page.locator('.fuel-alert').count()) === 0, 'alerte masquée une fois le plein fait');
+
+// soute limitée : capacité de base 12, alerte quand elle est pleine
+await page.evaluate(() => {
+  const st = (window as any).__store.getState();
+  for (let i = 0; i < 20; i++) st.addCargo('coal');
+});
+await page.waitForTimeout(200);
+s = await snap();
+check(s.coal === 12, `capacité de soute plafonnée (${s.coal}/12)`);
+check((await page.locator('.cargo-alert').count()) > 0, 'alerte soute pleine affichée');
+await page.evaluate(() => (window as any).__store.setState({ cargo: {} }));
+await page.waitForTimeout(200);
+check((await page.locator('.cargo-alert').count()) === 0, 'alerte soute masquée une fois vidée');
+
 // le canvas garde sa taille CSS malgré le devicePixelRatio de 2
 const cssSize = await page.evaluate(() => {
   const c = document.querySelector('canvas.game-canvas') as HTMLCanvasElement;
@@ -120,11 +141,9 @@ const sideX = (await snap()).x;
 check(sideX > s.x + 0.8, `forage latéral (avancée de ${(sideX - s.x).toFixed(2)} tuile)`);
 await page.screenshot({ path: '/tmp/drill-2-digging.png' });
 
-// minerais pour tester la vente (l'apparition naturelle est aléatoire)
+// minerais pour tester la vente (injection directe, au-delà de la capacité)
 await page.evaluate(() => {
-  const add = (window as any).__store.getState().addCargo;
-  for (let i = 0; i < 140; i++) add('coal');
-  for (let i = 0; i < 10; i++) add('iron');
+  (window as any).__store.setState({ cargo: { coal: 140, iron: 10 } });
 });
 
 // ── Remonter au jetpack : Haut+Gauche pour glisser sous le plafond
@@ -240,6 +259,10 @@ check(s.hull === 170, `coque neuve livrée intacte (${s.hull.toFixed(0)} / 170 P
 await page.click('.upgrade-row:has-text("Réservoir") button');
 s = await snap();
 check(s.fuel === 170, `réservoir neuf livré plein (${s.fuel.toFixed(0)} / 170 L)`);
+const moneyBeforeCargo = (await snap()).money;
+await page.click('.upgrade-row:has-text("Soute") button');
+s = await snap();
+check(s.money === moneyBeforeCargo - 140, 'achat amélioration soute (−140 $)');
 await page.click('.upgrade-row:has-text("Téléporteur") button');
 s = await snap();
 check(s.teleporters === 1, 'achat téléporteur');
