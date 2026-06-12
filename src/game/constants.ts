@@ -184,22 +184,36 @@ export const ORE_IDS: OreId[] = [
   "diamond",
 ];
 
-// Bandes de profondeur : probabilité d'apparition par tuile, avec fondu aux bords
+// Probabilité d'apparition par tuile, modélisée en gaussienne de la profondeur :
+// p(d) = p × exp(−(d − mu)² / 2σ²). `plateau` garde p constant au-delà du pic
+// (pour le minerai le plus profond, sans limite basse).
 export interface OreBand {
   ore: OreId;
-  min: number;
-  max: number;
-  p: number;
+  mu: number; // profondeur du pic d'abondance
+  sigma: number; // étalement du filon
+  p: number; // probabilité au pic
+  plateau?: boolean;
 }
 export const ORE_BANDS: OreBand[] = [
-  { ore: "diamond", min: 500, max: Infinity, p: 0.009 },
-  { ore: "emerald", min: 350, max: 900, p: 0.013 },
-  { ore: "ruby", min: 220, max: 600, p: 0.018 },
-  { ore: "gold", min: 120, max: 420, p: 0.026 },
-  { ore: "silver", min: 60, max: 260, p: 0.034 },
-  { ore: "iron", min: 14, max: 170, p: 0.05 },
-  { ore: "coal", min: 2, max: 85, p: 0.07 },
+  { ore: "diamond", mu: 800, sigma: 150, p: 0.009, plateau: true },
+  { ore: "emerald", mu: 625, sigma: 140, p: 0.013 },
+  { ore: "ruby", mu: 410, sigma: 95, p: 0.018 },
+  { ore: "gold", mu: 270, sigma: 75, p: 0.026 },
+  { ore: "silver", mu: 160, sigma: 50, p: 0.034 },
+  { ore: "iron", mu: 90, sigma: 40, p: 0.05 },
+  { ore: "coal", mu: 40, sigma: 24, p: 0.07 },
 ];
+
+// Enveloppe gaussienne d'une bande à la profondeur d.
+// La queue côté surface est tronquée à 2σ : pas de gemme « égarée » trop haut,
+// mais la queue profonde reste intacte (y trouver un minerai attardé est sans
+// danger pour l'équilibre).
+export function oreEnvelope(band: OreBand, d: number): number {
+  if (d < band.mu - 2 * band.sigma) return 0;
+  if (band.plateau && d >= band.mu) return 1;
+  const z = (d - band.mu) / band.sigma;
+  return Math.exp(-0.5 * z * z);
+}
 
 // Poches de vide naturelles (grottes) : probabilité par tuile
 export const CAVE_MIN_DEPTH = 2;

@@ -9,12 +9,11 @@ import {
   boulderChance,
   caveChance,
   lavaChance,
+  oreEnvelope,
   type TileDef,
   type TileKind,
 } from './constants';
 import { mulberry32 } from './rng';
-
-const BAND_FADE = 25; // tuiles de fondu en bord de bande de minerai
 
 export class World {
   readonly seed: number;
@@ -107,13 +106,13 @@ export class World {
       const r1 = rng();
       let kind: TileKind =
         r1 < hardChance ? 'hardrock' : r1 < hardChance + rockChance ? 'rock' : 'dirt';
-      // Minerai par-dessus la roche de base
+      // Minerai par-dessus la roche de base (abondance gaussienne en profondeur)
       const r2 = rng();
       let acc = 0;
       for (const band of ORE_BANDS) {
-        const ramp = Math.min(1, (y - band.min) / BAND_FADE, (band.max - y) / BAND_FADE);
-        if (ramp <= 0) continue;
-        acc += band.p * ramp;
+        const env = oreEnvelope(band, y);
+        if (env < 0.001) continue;
+        acc += band.p * env;
         if (r2 < acc) {
           kind = band.ore;
           break;
