@@ -353,6 +353,8 @@ export const RADIATOR_TIERS: Tier[] = [
   { name: "Tri-turbine fréon", price: 500000, stat: 0.8 },
 ];
 
+export const FLOATER_LIFE = 1.1; // durée de vie des textes flottants (s)
+
 export const FUEL_PRICE = 1; // $ / litre
 export const REPAIR_PRICE = 1.5; // $ / point de coque
 export const TELEPORTER_PRICE = 2000; // le Matter Transmitter de Motherload

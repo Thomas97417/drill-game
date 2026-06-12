@@ -46,7 +46,7 @@ export function HUD() {
   const useTeleporter = useGameStore((s) => s.useTeleporter);
   const dropDynamite = useGameStore((s) => s.dropDynamite);
   const toggleInventory = useGameStore((s) => s.toggleInventory);
-  const newGame = useGameStore((s) => s.newGame);
+  const toggleOptions = useGameStore((s) => s.toggleOptions);
 
   const maxFuel = maxFuelOf(upgrades);
   const maxHull = maxHullOf(upgrades);
@@ -83,20 +83,16 @@ export function HUD() {
       </div>
 
       <div className="hud-top-right panel">
-        <div className="money">{fmt(money)} $</div>
-        <div className="depth">☀ Jour {day}</div>
-        <div className="depth">
-          Profondeur : {depth} m <span className="dim">(max {maxDepth} m)</span>
+        <div className="hud-tr-head">
+          <span className="dim">☀ Jour {day}</span>
+          <button className="gear-btn" onClick={toggleOptions} title="Options">
+            ⚙
+          </button>
         </div>
-        <button
-          className="btn btn-small"
-          onClick={() => {
-            if (window.confirm('Recommencer une nouvelle partie ? La progression sera effacée.'))
-              newGame();
-          }}
-        >
-          ↺ Nouvelle partie
-        </button>
+        <div className="money-big">{fmt(money)} $</div>
+        <div className="depth-big">
+          ⛏ {depth} m <span className="depth-max">max {maxDepth} m</span>
+        </div>
       </div>
 
       <div className="hud-bottom-center">

@@ -7,6 +7,7 @@ import {
   DYNAMITE_FUSE,
   DYNAMITE_RADIUS,
   FALL_DMG_FACTOR,
+  FLOATER_LIFE,
   FLY_ACCEL,
   GRAVITY,
   HULL_DMG_FACTOR,
@@ -84,6 +85,15 @@ export interface Flash {
   age: number;
 }
 
+// texte flottant (nom du minerai récolté…) qui monte et s'estompe
+export interface Floater {
+  x: number;
+  y: number;
+  text: string;
+  color: string;
+  age: number;
+}
+
 function makePlayer(pos?: { x: number; y: number }): Player {
   const w = 0.74;
   const h = 0.74;
@@ -110,6 +120,7 @@ export class Engine {
   particles: Particle[] = [];
   dynamites: Dynamite[] = [];
   flashes: Flash[] = [];
+  floaters: Floater[] = [];
   camX = 0;
   camY = 0;
   viewW = 800; // px CSS
@@ -262,8 +273,10 @@ export class Engine {
           if (cargoCount(s.cargo) >= maxCargoOf(s.upgrades)) {
             // soute pleine : le minerai s'éparpille, perdu
             this.emitBurst(d.x + 0.5, d.y + 0.5, def.gem ?? def.speckle, 10);
+            this.floaters.push({ x: d.x + 0.5, y: d.y + 0.2, text: 'Soute pleine !', color: '#ffb74f', age: 0 });
           } else {
             store.addCargo(kind as OreId);
+            this.floaters.push({ x: d.x + 0.5, y: d.y + 0.2, text: def.name, color: def.gem ?? '#ffffff', age: 0 });
           }
         }
         this.digging = null;
@@ -487,6 +500,7 @@ export class Engine {
     this.particles = [];
     this.dynamites = [];
     this.flashes = [];
+    this.floaters = [];
     this.snapCamera();
   }
 
@@ -606,6 +620,8 @@ export class Engine {
     this.particles = this.particles.filter((pt) => pt.life > 0);
     for (const f of this.flashes) f.age += dt;
     this.flashes = this.flashes.filter((f) => f.age < 0.45);
+    for (const fl of this.floaters) fl.age += dt;
+    this.floaters = this.floaters.filter((fl) => fl.age < FLOATER_LIFE);
   }
 }
 

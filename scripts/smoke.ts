@@ -129,6 +129,23 @@ check(cssSize.w === 1280 && cssSize.h === 800, 'canvas à la taille de la fenêt
 
 // ── Creuser vers le bas puis sur le côté ──────────────────────────────────
 const shaftX = s.x;
+// un minerai planté sous la foreuse doit faire flotter son nom à la récolte
+await page.evaluate(() => {
+  const e = (window as any).__engine;
+  const col = Math.floor(e.player.x + e.player.w / 2);
+  e.world.getTile(col, 0);
+  e.world.rows.get(0)[col] = 'iron';
+});
+await page.keyboard.down('ArrowDown');
+let sawFloater = false;
+for (let i = 0; i < 30 && !sawFloater; i++) {
+  await page.waitForTimeout(100);
+  sawFloater = await page.evaluate(() =>
+    (window as any).__engine.floaters.some((f: any) => f.text === 'Ironium'),
+  );
+}
+await page.keyboard.up('ArrowDown');
+check(sawFloater, 'nom du minerai flottant à la récolte');
 await holdUntil(page, 'ArrowDown', (st) => st.depth >= 4);
 s = await snap();
 check(s.depth >= 4, `forage vertical (profondeur ${s.depth} m)`);
@@ -197,6 +214,17 @@ check(s.money >= 7500 && s.iron === 0, `tout vendu avec [V] (${s.money} $)`);
 await page.keyboard.press('KeyE');
 await page.waitForTimeout(400);
 check((await snap()).ui === 'playing', 'fermeture du menu avec [E] (sans réouverture)');
+
+// ── Options via l'engrenage ───────────────────────────────────────────────
+await page.click('.gear-btn');
+await page.waitForTimeout(300);
+check(
+  (await page.locator('.modal.options:has-text("Nouvelle partie")').count()) > 0,
+  "dialog options ouverte via l'engrenage",
+);
+await page.keyboard.press('Escape');
+await page.waitForTimeout(300);
+check((await snap()).ui === 'playing', 'dialog options fermée avec [Échap]');
 
 // ── Inventaire avec [I] ───────────────────────────────────────────────────
 await page.keyboard.press('KeyI');

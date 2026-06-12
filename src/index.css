@@ -179,6 +179,69 @@ body {
   font-size: 13px;
 }
 
+/* ── Panneau argent / profondeur ────────────────────────────────────────── */
+
+.hud-tr-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  font-size: 12px;
+}
+
+.gear-btn {
+  pointer-events: auto;
+  font-size: 17px;
+  line-height: 1;
+  color: #c8cdd8;
+  background: transparent;
+  border: none;
+  padding: 2px;
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+
+.gear-btn:hover {
+  color: #fff;
+  transform: rotate(45deg);
+}
+
+.money-big {
+  font-size: 32px;
+  font-weight: bold;
+  color: #ffd54f;
+  text-shadow: 0 2px 3px rgba(0, 0, 0, 0.8);
+  line-height: 1.15;
+}
+
+.depth-big {
+  font-size: 19px;
+  font-weight: bold;
+  color: #e8f4ff;
+  text-shadow: 0 1px 2px #000;
+}
+
+.depth-max {
+  font-size: 12px;
+  font-weight: normal;
+  opacity: 0.55;
+  margin-left: 4px;
+}
+
+.key-cell {
+  font-weight: bold;
+  color: #ffd54f;
+  white-space: nowrap;
+}
+
+.btn-danger {
+  background: #8e2323;
+}
+
+.btn-danger:hover:not(:disabled) {
+  background: #ad2e2e;
+}
+
 .dim {
   opacity: 0.6;
 }

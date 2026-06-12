@@ -19,7 +19,7 @@ import {
 } from './game/constants';
 import { loadSave } from './game/save';
 
-export type UiMode = 'playing' | 'rescue' | 'inventory' | BuildingId;
+export type UiMode = 'playing' | 'rescue' | 'inventory' | 'options' | BuildingId;
 export const isBuilding = (ui: UiMode): ui is BuildingId =>
   ui === 'sell' || ui === 'fuel' || ui === 'garage';
 export type UpgradeKind = 'drill' | 'tank' | 'hull' | 'jetpack' | 'cargo' | 'radiator';
@@ -63,6 +63,7 @@ interface GameStore {
   openShop: (building: BuildingId) => void;
   closeShop: () => void;
   toggleInventory: () => void;
+  toggleOptions: () => void;
   triggerRescue: (reason: 'fuel' | 'hull') => void;
   doRescue: () => void;
   newGame: () => void;
@@ -218,6 +219,11 @@ export const useGameStore = create<GameStore>((set) => ({
         : s.ui === 'playing'
           ? { ui: 'inventory' }
           : s,
+    ),
+
+  toggleOptions: () =>
+    set((s) =>
+      s.ui === 'options' ? { ui: 'playing' } : s.ui === 'playing' ? { ui: 'options' } : s,
     ),
 
   triggerRescue: (reason) => set({ ui: 'rescue', rescueReason: reason }),

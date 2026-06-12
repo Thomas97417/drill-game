@@ -2,6 +2,7 @@ import { GameCanvas } from './ui/GameCanvas';
 import { HUD } from './ui/HUD';
 import { Shop } from './ui/Shop';
 import { Inventory } from './ui/Inventory';
+import { Options } from './ui/Options';
 import { RescueModal } from './ui/RescueModal';
 
 export default function App() {
@@ -11,6 +12,7 @@ export default function App() {
       <HUD />
       <Shop />
       <Inventory />
+      <Options />
       <RescueModal />
     </>
   );

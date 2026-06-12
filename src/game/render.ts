@@ -1,4 +1,4 @@
-import { BUILDINGS, DAY_CYCLE, TILE, TILES, WORLD_W } from './constants';
+import { BUILDINGS, DAY_CYCLE, FLOATER_LIFE, TILE, TILES, WORLD_W } from './constants';
 import { hash2D } from './rng';
 import { drawTileSprite } from './tileart';
 import { useGameStore } from '../store';
@@ -22,7 +22,29 @@ export function render(e: Engine) {
   drawParticles(e, ctx, camPxX, camPxY);
   drawFlashes(e, ctx, camPxX, camPxY);
   drawLight(e, ctx, W, H, camPxX, camPxY, day);
+  drawFloaters(e, ctx, camPxX, camPxY);
   drawDepthMarkers(ctx, e.camY, H, camPxX, camPxY);
+}
+
+// ── Textes flottants : nom du minerai récolté, qui monte et s'estompe ────────
+
+function drawFloaters(e: Engine, ctx: CanvasRenderingContext2D, camPxX: number, camPxY: number) {
+  if (e.floaters.length === 0) return;
+  ctx.font = 'bold 14px ui-monospace, monospace';
+  ctx.textAlign = 'center';
+  ctx.lineWidth = 3;
+  ctx.strokeStyle = 'rgba(0,0,0,0.85)';
+  for (const f of e.floaters) {
+    const t = f.age / FLOATER_LIFE;
+    const px = f.x * TILE - camPxX;
+    const py = (f.y - t * 0.8) * TILE - camPxY;
+    ctx.globalAlpha = 1 - t * t;
+    ctx.strokeText(f.text, px, py);
+    ctx.fillStyle = f.color;
+    ctx.fillText(f.text, px, py);
+  }
+  ctx.globalAlpha = 1;
+  ctx.textAlign = 'left';
 }
 
 // ── Cycle jour/nuit ──────────────────────────────────────────────────────────
