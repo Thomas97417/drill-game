@@ -12,11 +12,13 @@ import {
   TANK_TIERS,
   TELEPORTER_PRICE,
   TILES,
+  cargoCount,
   cargoValue,
   fmt,
 } from "../game/constants";
 import {
   isBuilding,
+  maxCargoOf,
   maxFuelOf,
   maxHullOf,
   useGameStore,
@@ -71,9 +73,9 @@ const UPGRADE_ROWS: {
 ];
 
 const TITLES = {
-  sell: "🏪 Vente de minerais",
-  fuel: "⛽ Station essence",
-  garage: "🔧 Atelier",
+  sell: "Hôtel des ventes",
+  fuel: "Station essence",
+  garage: "Atelier",
 } as const;
 
 export function Shop() {
@@ -134,8 +136,13 @@ export function Shop() {
 
         {ui === "sell" && (
           <div className="tab-content">
+            <h3 className="shop-section">
+              Cargaison ({cargoCount(cargo)}/{maxCargoOf(upgrades)})
+            </h3>
             {cargoEntries.length === 0 ? (
-              <p className="dim">Votre soute est vide. Allez creuser !</p>
+              <p className="empty-state">
+                ⛏ Votre soute est vide — allez creuser !
+              </p>
             ) : (
               <>
                 <table className="sell-table">
@@ -146,9 +153,11 @@ export function Shop() {
                           <OreIcon kind={id} size={30} />
                           {TILES[id].name}
                         </td>
-                        <td>×{cargo[id]}</td>
-                        <td>{fmt(TILES[id].value ?? 0)} $ / u.</td>
-                        <td className="right">
+                        <td className="dim">×{cargo[id]}</td>
+                        <td className="dim">
+                          {fmt(TILES[id].value ?? 0)} $ / u.
+                        </td>
+                        <td className="right gold">
                           {fmt((cargo[id] ?? 0) * (TILES[id].value ?? 0))} $
                         </td>
                         <td className="right">
@@ -163,8 +172,12 @@ export function Shop() {
                     ))}
                   </tbody>
                 </table>
-                <button className="btn btn-primary" onClick={sellAll}>
-                  Tout vendre [F] — {fmt(total)} $
+                <button
+                  className="btn btn-primary buy-btn sell-all"
+                  onClick={sellAll}
+                >
+                  <span>Tout vendre [F]</span>
+                  <span className="buy-price">{fmt(total)} $</span>
                 </button>
               </>
             )}
@@ -173,30 +186,43 @@ export function Shop() {
 
         {ui === "fuel" && (
           <div className="tab-content">
-            <p>
-              Réservoir :{" "}
-              <b>
+            <h3 className="shop-section">Réservoir</h3>
+            <div className="fuel-gauge">
+              <div
+                className="fuel-gauge-fill"
+                style={{ width: `${Math.min(100, (fuel / maxFuel) * 100)}%` }}
+              />
+              <span className="fuel-gauge-text">
                 {fmt(fuel)} / {fmt(maxFuel)} L
-              </b>{" "}
-              · Essence à {FUEL_PRICE} $/L
+              </span>
+            </div>
+            <p className="dim">
+              Essence à {FUEL_PRICE} $/L
+              {missingFuel < 0.5 ? " · réservoir plein" : ""}
             </p>
-            <div className="btn-row">
+            <div className="fuel-options">
               {[10, 25, 50].map((l) => (
                 <button
                   key={l}
-                  className="btn"
+                  className="btn buy-btn"
                   disabled={missingFuel <= 0 || money < 1}
                   onClick={() => buyFuel(l)}
                 >
-                  +{l} L ({fmt(Math.min(l, missingFuel) * FUEL_PRICE)} $)
+                  <span>+{l} L</span>
+                  <span className="buy-price">
+                    {fmt(Math.min(l, missingFuel) * FUEL_PRICE)} $
+                  </span>
                 </button>
               ))}
               <button
-                className="btn btn-primary"
+                className="btn btn-primary buy-btn"
                 disabled={missingFuel <= 0 || money < 1}
                 onClick={() => buyFuel(Infinity)}
               >
-                Plein [F] ({fmt(missingFuel * FUEL_PRICE)} $)
+                <span>Plein [F]</span>
+                <span className="buy-price">
+                  {fmt(missingFuel * FUEL_PRICE)} $
+                </span>
               </button>
             </div>
           </div>

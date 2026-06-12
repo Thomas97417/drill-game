@@ -323,15 +323,7 @@ body {
   border-color: #ffd54f;
 }
 
-.inv-section {
-  margin: 14px 0 6px;
-  font-size: 14px;
-  color: #ffd54f;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
-  padding-bottom: 4px;
-}
-
-/* en-têtes de sections de l'atelier (réparation / améliorations / consommables) */
+/* en-têtes de sections des panneaux (atelier, vente, inventaire, options) */
 .shop-section {
   margin: 18px 0 2px;
   font-size: 13px;
@@ -510,8 +502,73 @@ body {
   border-bottom-color: #ffd54f;
 }
 
-.tab-content {
-  min-height: 180px;
+/* contenu des panneaux : hauteur naturelle, pas de vide artificiel */
+
+.empty-state {
+  padding: 22px 0 10px;
+  text-align: center;
+  font-size: 14px;
+  opacity: 0.6;
+}
+
+.gold {
+  color: #ffd54f;
+  font-weight: bold;
+}
+
+/* bouton « Tout vendre » pleine largeur, prix à droite */
+.sell-all {
+  width: 100%;
+  margin-top: 12px;
+}
+
+/* jauge de carburant de la station */
+.fuel-gauge {
+  position: relative;
+  height: 26px;
+  background: rgba(0, 0, 0, 0.55);
+  border: 1px solid #000;
+  border-radius: 6px;
+  overflow: hidden;
+  margin: 8px 0 4px;
+}
+
+.fuel-gauge-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #f5a623, #ffd166);
+  transition: width 0.25s;
+}
+
+.fuel-gauge-text {
+  position: absolute;
+  inset: 0;
+  text-align: center;
+  line-height: 25px;
+  font-size: 13px;
+  font-weight: bold;
+  color: #fff;
+  text-shadow: 0 1px 2px #000;
+}
+
+/* options d'achat de carburant : grille régulière, prix dorés */
+.fuel-options {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  margin-top: 12px;
+}
+
+/* pastilles de consommables (inventaire) */
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 12px;
+  background: #2b2f3d;
+  border: 1px solid #000;
+  border-radius: 6px;
+  margin: 2px 8px 2px 0;
+  font-size: 13px;
 }
 
 /* ── Tableaux & lignes ──────────────────────────────────────────────────── */

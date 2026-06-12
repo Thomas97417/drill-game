@@ -86,12 +86,12 @@ export function Inventory() {
           </button>
         </div>
 
-        <h3 className="inv-section">
+        <h3 className="shop-section">
           Soute ({cargoCount(cargo)}/{maxCargoOf(upgrades)})
         </h3>
         {cargoEntries.length === 0 ? (
-          <p className="dim">
-            Soute vide — la valeur de vos trouvailles s'affichera ici.
+          <p className="empty-state">
+            ⛏ Soute vide — la valeur de vos trouvailles s'affichera ici.
           </p>
         ) : (
           <table className="sell-table">
@@ -102,8 +102,8 @@ export function Inventory() {
                     <OreIcon kind={id} size={24} />
                     {TILES[id].name}
                   </td>
-                  <td>×{cargo[id]}</td>
-                  <td className="right">
+                  <td className="dim">×{cargo[id]}</td>
+                  <td className="right gold">
                     {fmt((cargo[id] ?? 0) * (TILES[id].value ?? 0))} $
                   </td>
                 </tr>
@@ -112,26 +112,30 @@ export function Inventory() {
                 <td colSpan={2}>
                   <b>Valeur totale</b>
                 </td>
-                <td className="right">{fmt(cargoValue(cargo))} $</td>
+                <td className="right gold">{fmt(cargoValue(cargo))} $</td>
               </tr>
             </tbody>
           </table>
         )}
 
-        <h3 className="inv-section">Équipement consommable</h3>
+        <h3 className="shop-section">Équipement consommable</h3>
         <p>
-          🌀 Téléporteurs : <b>×{teleporters}</b> · 🧨 Dynamites :{" "}
-          <b>×{dynamites}</b>
+          <span className="chip">
+            🌀 Téléporteurs <b>×{teleporters}</b>
+          </span>
+          <span className="chip">
+            🧨 Dynamites <b>×{dynamites}</b>
+          </span>
         </p>
 
-        <h3 className="inv-section">Améliorations installées</h3>
+        <h3 className="shop-section">Améliorations installées</h3>
         <table className="sell-table">
           <tbody>
             {gear.map((g) => (
               <tr key={g.label}>
                 <td>{g.label}</td>
                 <td>{g.tier.name}</td>
-                <td className="right">
+                <td className="right dim">
                   {g.stat !== g.tier.name ? g.stat : ""}
                 </td>
               </tr>

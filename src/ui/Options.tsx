@@ -46,7 +46,7 @@ export function Options() {
           </button>
         </div>
 
-        <h3 className="inv-section">Clavier</h3>
+        <h3 className="shop-section">Clavier</h3>
         <div className="layout-btns">
           <button
             className={`btn ${layout === "azerty" ? "btn-primary" : ""}`}
@@ -62,7 +62,7 @@ export function Options() {
           </button>
         </div>
 
-        <h3 className="inv-section">Contrôles</h3>
+        <h3 className="shop-section">Contrôles</h3>
         <table className="sell-table">
           <tbody>
             {controls(layout).map(([key, label]) => (
@@ -74,7 +74,7 @@ export function Options() {
           </tbody>
         </table>
 
-        <h3 className="inv-section">Partie</h3>
+        <h3 className="shop-section">Partie</h3>
         <p className="dim">
           La partie est sauvegardée automatiquement dans le navigateur.
         </p>
