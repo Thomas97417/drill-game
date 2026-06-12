@@ -298,6 +298,21 @@ function drawTiles(
         }
       }
 
+      // l'amazonite irradie d'une aura turquoise pulsante (mode additif)
+      if (kind === 'amazonite') {
+        const pulse = 0.5 + 0.5 * Math.sin(e.time * 3.2 + (x * 11 + y * 7) * 0.5);
+        const g = ctx.createRadialGradient(
+          px + TILE / 2, py + TILE / 2, 4,
+          px + TILE / 2, py + TILE / 2, TILE * 1.1,
+        );
+        g.addColorStop(0, `rgba(52,241,197,${0.16 + 0.14 * pulse})`);
+        g.addColorStop(1, 'rgba(52,241,197,0)');
+        ctx.globalCompositeOperation = 'lighter';
+        ctx.fillStyle = g;
+        ctx.fillRect(px - TILE * 0.6, py - TILE * 0.6, TILE * 2.2, TILE * 2.2);
+        ctx.globalCompositeOperation = 'source-over';
+      }
+
       // la lave palpite et irradie
       if (kind === 'lava') {
         const pulse = 0.5 + 0.5 * Math.sin(e.time * 2.6 + (x * 7 + y * 13) * 0.7);

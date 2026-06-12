@@ -131,7 +131,7 @@ function paintTile(ctx: CanvasRenderingContext2D, kind: TileKind, rng: Rng) {
       break;
     case 'amazonite':
       paintRock(ctx, rng, ['#1f1f27', '#2e2e38', '#3a3a45', '#46464f'], 5);
-      paintCrystals(ctx, rng, '#3fd9c2', '#1b7f70', '#bdfff2');
+      paintAmazonite(ctx, rng);
       break;
     default:
       break;
@@ -407,6 +407,53 @@ function paintNuggets(ctx: CanvasRenderingContext2D, rng: Rng, mid: string, dark
     const cy = 1 + Math.floor(rng() * (G - 5));
     chunk(ctx, rng, cx, cy, 3, dark, mid, light);
   }
+}
+
+// Amazonite : éventail de prismes vert-turquoise striés de blanc (la veine
+// signature de la pierre), sur halo lumineux — le minerai ultime se reconnaît
+// au premier coup d'œil
+function paintAmazonite(ctx: CanvasRenderingContext2D, rng: Rng) {
+  const cx = TILE * (0.4 + rng() * 0.2);
+  const cy = TILE * (0.62 + rng() * 0.12);
+  // halo
+  const halo = ctx.createRadialGradient(cx, cy - 8, 2, cx, cy - 8, TILE * 0.6);
+  halo.addColorStop(0, 'rgba(52,241,197,0.5)');
+  halo.addColorStop(1, 'rgba(52,241,197,0)');
+  ctx.fillStyle = halo;
+  ctx.fillRect(0, 0, TILE, TILE);
+  // socle d'ombre
+  ctx.fillStyle = 'rgba(0,0,0,0.45)';
+  ctx.beginPath();
+  ctx.ellipse(cx, cy + 4, TILE * 0.3, 5, 0, 0, Math.PI * 2);
+  ctx.fill();
+  // prismes en éventail
+  for (const a0 of [-0.55, -0.12, 0.32, 0.68]) {
+    const a = a0 + (rng() - 0.5) * 0.14;
+    const len = TILE * (0.3 + rng() * 0.16);
+    const wPr = 7 + rng() * 3;
+    ctx.save();
+    ctx.translate(cx, cy);
+    ctx.rotate(a);
+    ctx.fillStyle = '#0c8f74'; // face sombre
+    ctx.fillRect(-wPr / 2, -len, wPr, len);
+    ctx.fillStyle = '#2ad9ae'; // face éclairée
+    ctx.fillRect(-wPr / 2, -len, wPr * 0.5, len);
+    // pointe biseautée
+    ctx.fillStyle = '#a8ffe9';
+    ctx.beginPath();
+    ctx.moveTo(-wPr / 2, -len);
+    ctx.lineTo(wPr / 2, -len);
+    ctx.lineTo(0, -len - 7);
+    ctx.closePath();
+    ctx.fill();
+    // veines blanches caractéristiques
+    ctx.fillStyle = 'rgba(255,255,255,0.85)';
+    ctx.fillRect(-wPr / 2, -len * (0.3 + rng() * 0.2), wPr, 2);
+    ctx.fillRect(-wPr / 2, -len * (0.65 + rng() * 0.2), wPr, 2);
+    ctx.restore();
+  }
+  sparkle(ctx, cx + 8, cy - TILE * 0.34, 5, '#ffffff');
+  sparkle(ctx, cx - 11, cy - TILE * 0.16, 4, '#a8ffe9');
 }
 
 function paintCrystals(ctx: CanvasRenderingContext2D, rng: Rng, mid: string, dark: string, light: string) {

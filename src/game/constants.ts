@@ -214,7 +214,7 @@ export const TILES: Record<TileKind, TileDef> = {
     value: 500000,
     base: "#3c3c45",
     speckle: "#2b2b33",
-    gem: "#3fd9c2",
+    gem: "#34f1c5",
   },
 };
 
@@ -243,7 +243,7 @@ export interface OreBand {
 }
 export const ORE_BANDS: OreBand[] = [
   { ore: "amazonite", mu: 1400, sigma: 160, p: 0.004, plateau: true },
-  { ore: "diamond", mu: 1050, sigma: 140, p: 0.006 },
+  { ore: "diamond", mu: 1050, sigma: 180, p: 0.006 },
   { ore: "ruby", mu: 850, sigma: 120, p: 0.009 },
   { ore: "emerald", mu: 700, sigma: 110, p: 0.012 },
   { ore: "einsteinium", mu: 550, sigma: 100, p: 0.016 },
@@ -369,7 +369,6 @@ export const FLOATER_LIFE = 1.1; // durée de vie des textes flottants (s)
 export const FUEL_PRICE = 1; // $ / litre
 export const REPAIR_PRICE = 1.5; // $ / point de coque
 export const TELEPORTER_PRICE = 2000; // le Matter Transmitter de Motherload
-
 
 // ── Physique ─────────────────────────────────────────────────────────────────
 export const GRAVITY = 28; // tuiles/s²
