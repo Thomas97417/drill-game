@@ -44,32 +44,32 @@ export function Inventory() {
   const cargoEntries = ORE_IDS.filter((id) => (cargo[id] ?? 0) > 0);
   const gear = [
     {
-      label: "⚙️ Foreuse",
+      label: "Foreuse",
       tier: DRILL_TIERS[upgrades.drill],
       stat: `×${DRILL_TIERS[upgrades.drill].stat}`,
     },
     {
-      label: "⛽ Réservoir",
+      label: "Réservoir",
       tier: TANK_TIERS[upgrades.tank],
       stat: `${TANK_TIERS[upgrades.tank].stat} L`,
     },
     {
-      label: "🛡 Coque",
+      label: "Coque",
       tier: HULL_TIERS[upgrades.hull],
       stat: `${HULL_TIERS[upgrades.hull].stat} PV`,
     },
     {
-      label: "🚀 Moteur",
+      label: "Moteur",
       tier: JETPACK_TIERS[upgrades.jetpack],
       stat: `×${JETPACK_TIERS[upgrades.jetpack].stat}`,
     },
     {
-      label: "📦 Soute",
+      label: "Soute",
       tier: CARGO_TIERS[upgrades.cargo],
       stat: `${CARGO_TIERS[upgrades.cargo].stat} minerais`,
     },
     {
-      label: "❄️ Radiateur",
+      label: "Radiateur",
       tier: RADIATOR_TIERS[upgrades.radiator],
       stat: `−${Math.round(RADIATOR_TIERS[upgrades.radiator].stat * 100)} %`,
     },
@@ -79,7 +79,7 @@ export function Inventory() {
     <div className="overlay">
       <div className="modal inventory">
         <div className="modal-header">
-          <h2>🎒 Inventaire</h2>
+          <h2>Inventaire</h2>
           <div className="money">{fmt(money)} $</div>
           <button className="btn btn-small" onClick={toggleInventory}>
             ✕ Fermer
@@ -121,10 +121,10 @@ export function Inventory() {
         <h3 className="shop-section">Équipement consommable</h3>
         <p>
           <span className="chip">
-            🌀 Téléporteurs <b>×{teleporters}</b>
+            Téléporteurs <b>×{teleporters}</b>
           </span>
           <span className="chip">
-            🧨 Dynamites <b>×{dynamites}</b>
+            Dynamites <b>×{dynamites}</b>
           </span>
         </p>
 

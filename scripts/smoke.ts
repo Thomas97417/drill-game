@@ -201,7 +201,7 @@ check(
 await page.keyboard.press('KeyE');
 await page.waitForTimeout(400);
 check(
-  (await page.locator('.modal.shop:has-text("Vente de minerais")').count()) > 0,
+  (await page.locator('.modal.shop:has-text("Hôtel des ventes")').count()) > 0,
   'comptoir de vente ouvert avec [E]',
 );
 await page.screenshot({ path: '/tmp/drill-3-shop.png' });

@@ -153,7 +153,7 @@ export const TILES: Record<TileKind, TileDef> = {
     value: 750,
     base: "#54545e",
     speckle: "#3e3e47",
-    gem: "#dbe8ee",
+    gem: "#8fd0ec",
   },
   einsteinium: {
     name: "Einsteinium",

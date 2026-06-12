@@ -760,7 +760,7 @@ function drawPlayer(e: Engine, ctx: CanvasRenderingContext2D, camPxX: number, ca
     ctx.rotate(rear * 0.24);
     const glow = ctx.createRadialGradient(0, h * 0.25, 2, 0, h * 0.25, h * 0.9);
     glow.addColorStop(0, js.glow);
-    glow.addColorStop(1, 'rgba(0,0,0,0)');
+    glow.addColorStop(1, fadedOut(js.glow));
     ctx.fillStyle = glow;
     ctx.fillRect(-w * 0.8, -h * 0.1, w * 1.6, h * 1.5);
     const fs = js.nozzles === 2 ? 0.72 : 1;
@@ -1004,7 +1004,7 @@ function drawDrillBit(
   if (st.glow) {
     const g = ctx.createRadialGradient(len * 0.5, 0, 2, len * 0.5, 0, len * 0.9);
     g.addColorStop(0, st.glow);
-    g.addColorStop(1, 'rgba(0,0,0,0)');
+    g.addColorStop(1, fadedOut(st.glow));
     ctx.fillStyle = g;
     ctx.fillRect(-len * 0.4, -len, len * 2, len * 2);
   }
@@ -1134,4 +1134,10 @@ function roundRect(
 
 function rgb(c: [number, number, number]): string {
   return `rgb(${Math.round(c[0])},${Math.round(c[1])},${Math.round(c[2])})`;
+}
+
+// même couleur avec alpha 0 — fondre vers « rgba(0,0,0,0) » (noir transparent)
+// créerait un halo sombre autour des lueurs sur fond clair
+export function fadedOut(rgba: string): string {
+  return rgba.replace(/[\d.]+\)$/, '0)');
 }

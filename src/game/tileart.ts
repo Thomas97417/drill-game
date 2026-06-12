@@ -111,7 +111,7 @@ function paintTile(ctx: CanvasRenderingContext2D, kind: TileKind, rng: Rng) {
       break;
     case 'platinum':
       paintRock(ctx, rng, ['#33333c', '#46464f', '#52525c', '#5e5e69'], 4);
-      paintNuggets(ctx, rng, '#dbe8ee', '#8fa3ad', '#ffffff');
+      paintPlatinum(ctx, rng);
       break;
     case 'einsteinium':
       paintRock(ctx, rng, ['#33333c', '#46464f', '#52525c', '#5e5e69'], 4);
@@ -355,6 +355,49 @@ function paintIron(ctx: CanvasRenderingContext2D, rng: Rng) {
     const cx = 1 + Math.floor(rng() * (G - 5));
     const cy = 1 + Math.floor(rng() * (G - 5));
     chunk(ctx, rng, cx, cy, 3, '#454c56', '#7e8794', '#b7c0cc');
+  }
+}
+
+// Platinium : plaques hexagonales bleu glacé à barre de brillance,
+// impossibles à confondre avec les pépites carrées du silverium
+function paintPlatinum(ctx: CanvasRenderingContext2D, rng: Rng) {
+  for (let i = 0; i < 3; i++) {
+    const x = (2.6 + rng() * (G - 5.2)) * P;
+    const y = (2.6 + rng() * (G - 5.2)) * P;
+    const r = (1.5 + rng() * 0.9) * P;
+    // ombre portée
+    ctx.fillStyle = 'rgba(0,0,0,0.4)';
+    ctx.beginPath();
+    ctx.ellipse(x + 2, y + r * 0.7, r, r * 0.35, 0, 0, Math.PI * 2);
+    ctx.fill();
+    // plaque hexagonale
+    const hex = (cx: number, cy: number, rad: number) => {
+      ctx.beginPath();
+      for (let k = 0; k < 6; k++) {
+        const a = (k * Math.PI) / 3 + Math.PI / 6;
+        const px = cx + Math.cos(a) * rad;
+        const py = cy + Math.sin(a) * rad;
+        if (k === 0) ctx.moveTo(px, py);
+        else ctx.lineTo(px, py);
+      }
+      ctx.closePath();
+    };
+    ctx.fillStyle = '#3f6b85'; // liseré froid
+    hex(x, y, r + 2);
+    ctx.fill();
+    ctx.fillStyle = '#8fc6de';
+    hex(x, y, r);
+    ctx.fill();
+    ctx.fillStyle = '#d8f2ff'; // facette claire en haut à gauche
+    hex(x - r * 0.18, y - r * 0.18, r * 0.55);
+    ctx.fill();
+    // barre de brillance diagonale
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.rotate(-Math.PI / 4);
+    ctx.fillStyle = 'rgba(255,255,255,0.9)';
+    ctx.fillRect(-r * 0.85, -2, r * 1.7, 3);
+    ctx.restore();
   }
 }
 

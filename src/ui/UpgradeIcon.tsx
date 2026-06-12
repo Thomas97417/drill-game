@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { TANK_TIERS } from '../game/constants';
-import { DRILL_STYLES, HULL_STYLES, JET_STYLES } from '../game/render';
+import { DRILL_STYLES, HULL_STYLES, JET_STYLES, fadedOut } from '../game/render';
 import type { UpgradeKind } from '../store';
 
 // Aperçu du palier d'amélioration, dessiné avec les styles de la machine
@@ -39,7 +39,7 @@ function paintDrill(ctx: CanvasRenderingContext2D, S: number, tier: number) {
   if (st.glow) {
     const g = ctx.createRadialGradient(S * 0.45, cy, 2, S * 0.45, cy, S * 0.55);
     g.addColorStop(0, st.glow);
-    g.addColorStop(1, 'rgba(0,0,0,0)');
+    g.addColorStop(1, fadedOut(st.glow));
     ctx.fillStyle = g;
     ctx.fillRect(0, 0, S, S);
   }
