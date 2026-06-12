@@ -321,13 +321,13 @@ export const JETPACK_TIERS: Tier[] = [
 
 // stat = capacité de la soute (nombre de minerais transportables)
 export const CARGO_TIERS: Tier[] = [
-  { name: "10 minerais", price: 0, stat: 10 },
-  { name: "15 minerais", price: 750, stat: 15 },
-  { name: "25 minerais", price: 2000, stat: 25 },
-  { name: "40 minerais", price: 5000, stat: 40 },
-  { name: "70 minerais", price: 20000, stat: 70 },
-  { name: "110 minerais", price: 100000, stat: 110 },
-  { name: "160 minerais", price: 500000, stat: 160 },
+  { name: "Micro", price: 0, stat: 10 },
+  { name: "Moyenne", price: 750, stat: 15 },
+  { name: "Énorme", price: 2000, stat: 25 },
+  { name: "Gigantesque", price: 5000, stat: 40 },
+  { name: "Titanesque", price: 20000, stat: 70 },
+  { name: "Léviathan", price: 100000, stat: 110 },
+  { name: "Compression de matière", price: 500000, stat: 160 },
 ];
 
 // stat = points de coque

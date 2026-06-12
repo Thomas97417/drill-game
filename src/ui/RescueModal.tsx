@@ -1,9 +1,12 @@
 import { useGameStore } from '../store';
+import { useArrowNav } from './useArrowNav';
 
 export function RescueModal() {
   const ui = useGameStore((s) => s.ui);
   const reason = useGameStore((s) => s.rescueReason);
   const doRescue = useGameStore((s) => s.doRescue);
+
+  useArrowNav(ui === 'rescue');
 
   if (ui !== 'rescue') return null;
 

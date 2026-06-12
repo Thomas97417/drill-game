@@ -1,16 +1,17 @@
-import { useEffect } from 'react';
-import { useGameStore, type KeyboardLayout } from '../store';
+import { useEffect } from "react";
+import { useGameStore, type KeyboardLayout } from "../store";
+import { useArrowNav } from "./useArrowNav";
 
 function controls(layout: KeyboardLayout): [string, string][] {
-  const move = layout === 'azerty' ? 'ZQSD' : 'WASD';
+  const move = layout === "azerty" ? "ZQSD" : "WASD";
   return [
-    [`${move} / flèches`, 'Se déplacer et creuser (gauche, droite, bas)'],
-    [layout === 'azerty' ? 'Z / ↑' : 'W / ↑', 'Voler (réacteur dorsal)'],
-    ['E', 'Entrer dans un bâtiment / fermer un menu'],
-    ['F', 'Action rapide du bâtiment (vendre, plein, réparer)'],
-    ['I', 'Inventaire'],
-    ['T', "Téléporteur d'urgence"],
-    ['X', 'Larguer une dynamite'],
+    [`${move} / flèches`, "Se déplacer et creuser (gauche, droite, bas)"],
+    [layout === "azerty" ? "Z / ↑" : "W / ↑", "Voler (réacteur dorsal)"],
+    ["E", "Entrer dans un bâtiment / fermer un menu"],
+    ["F", "Action rapide du bâtiment (vendre, plein, réparer)"],
+    ["I", "Inventaire"],
+    ["T", "Téléporteur d'urgence"],
+    ["X", "Larguer une dynamite"],
   ];
 }
 
@@ -21,15 +22,16 @@ export function Options() {
   const toggleOptions = useGameStore((s) => s.toggleOptions);
   const newGame = useGameStore((s) => s.newGame);
 
-  const open = ui === 'options';
+  const open = ui === "options";
+  useArrowNav(open);
 
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => {
-      if (e.code === 'Escape') toggleOptions();
+      if (e.code === "Escape") toggleOptions();
     };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
   }, [open, toggleOptions]);
 
   if (!open) return null;
@@ -40,21 +42,21 @@ export function Options() {
         <div className="modal-header">
           <h2>⚙ Options</h2>
           <button className="btn btn-small" onClick={toggleOptions}>
-            ✕ Fermer [Échap]
+            ✕ Fermer
           </button>
         </div>
 
         <h3 className="inv-section">Clavier</h3>
         <div className="layout-btns">
           <button
-            className={`btn ${layout === 'azerty' ? 'btn-primary' : ''}`}
-            onClick={() => setLayout('azerty')}
+            className={`btn ${layout === "azerty" ? "btn-primary" : ""}`}
+            onClick={() => setLayout("azerty")}
           >
             AZERTY
           </button>
           <button
-            className={`btn ${layout === 'qwerty' ? 'btn-primary' : ''}`}
-            onClick={() => setLayout('qwerty')}
+            className={`btn ${layout === "qwerty" ? "btn-primary" : ""}`}
+            onClick={() => setLayout("qwerty")}
           >
             QWERTY
           </button>
@@ -79,13 +81,20 @@ export function Options() {
         <button
           className="btn btn-danger"
           onClick={() => {
-            if (window.confirm('Recommencer une nouvelle partie ? La progression sera effacée.')) {
+            if (
+              window.confirm(
+                "Recommencer une nouvelle partie ? La progression sera effacée.",
+              )
+            ) {
               newGame();
             }
           }}
         >
           ↺ Nouvelle partie
         </button>
+        <div className="menu-hint dim">
+          ↑↓ / ZQSD naviguer · Entrée ou Espace valider · Échap ou E fermer
+        </div>
       </div>
     </div>
   );

@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect } from "react";
 import {
   CARGO_TIERS,
   DRILL_TIERS,
@@ -14,24 +14,66 @@ import {
   TILES,
   cargoValue,
   fmt,
-} from '../game/constants';
-import { isBuilding, maxFuelOf, maxHullOf, useGameStore, type UpgradeKind } from '../store';
-import { OreIcon } from './OreIcon';
-import { UpgradeIcon } from './UpgradeIcon';
+} from "../game/constants";
+import {
+  isBuilding,
+  maxFuelOf,
+  maxHullOf,
+  useGameStore,
+  type UpgradeKind,
+} from "../store";
+import { OreIcon } from "./OreIcon";
+import { UpgradeIcon } from "./UpgradeIcon";
+import { useArrowNav } from "./useArrowNav";
 
-const UPGRADE_ROWS: { kind: UpgradeKind; title: string; tiers: typeof DRILL_TIERS; statLabel: (s: number) => string }[] = [
-  { kind: 'drill', title: '⚙️ Foreuse (vitesse)', tiers: DRILL_TIERS, statLabel: (s) => `×${s}` },
-  { kind: 'tank', title: '⛽ Réservoir', tiers: TANK_TIERS, statLabel: (s) => `${s} L` },
-  { kind: 'hull', title: '🛡 Coque', tiers: HULL_TIERS, statLabel: (s) => `${s} PV` },
-  { kind: 'jetpack', title: '🚀 Moteur (vitesse & vol)', tiers: JETPACK_TIERS, statLabel: (s) => `×${s}` },
-  { kind: 'cargo', title: '📦 Soute (stockage)', tiers: CARGO_TIERS, statLabel: (s) => `${s} minerais` },
-  { kind: 'radiator', title: '❄️ Radiateur (protection lave)', tiers: RADIATOR_TIERS, statLabel: (s) => `−${Math.round(s * 100)} %` },
+const UPGRADE_ROWS: {
+  kind: UpgradeKind;
+  title: string;
+  tiers: typeof DRILL_TIERS;
+  statLabel: (s: number) => string;
+}[] = [
+  {
+    kind: "drill",
+    title: "Foreuse (vitesse)",
+    tiers: DRILL_TIERS,
+    statLabel: (s) => `×${s}`,
+  },
+  {
+    kind: "tank",
+    title: "Réservoir",
+    tiers: TANK_TIERS,
+    statLabel: (s) => `${s} L`,
+  },
+  {
+    kind: "hull",
+    title: "Coque",
+    tiers: HULL_TIERS,
+    statLabel: (s) => `${s} PV`,
+  },
+  {
+    kind: "jetpack",
+    title: "Moteur (vitesse & vol)",
+    tiers: JETPACK_TIERS,
+    statLabel: (s) => `×${s}`,
+  },
+  {
+    kind: "cargo",
+    title: "Soute (stockage)",
+    tiers: CARGO_TIERS,
+    statLabel: (s) => `${s} minerais`,
+  },
+  {
+    kind: "radiator",
+    title: "Radiateur (protection lave)",
+    tiers: RADIATOR_TIERS,
+    statLabel: (s) => `−${Math.round(s * 100)} %`,
+  },
 ];
 
 const TITLES = {
-  sell: '🏪 Vente de minerais',
-  fuel: '⛽ Station essence',
-  garage: '🔧 Atelier',
+  sell: "🏪 Vente de minerais",
+  fuel: "⛽ Station essence",
+  garage: "🔧 Atelier",
 } as const;
 
 export function Shop() {
@@ -53,20 +95,21 @@ export function Shop() {
   const closeShop = useGameStore((s) => s.closeShop);
 
   const open = isBuilding(ui);
+  useArrowNav(open);
 
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => {
-      if (e.code === 'Escape' || e.code === 'KeyE') closeShop();
+      if (e.code === "Escape" || e.code === "KeyE") closeShop();
       // action rapide unifiée
-      if (e.code === 'KeyF') {
-        if (ui === 'sell') sellAll();
-        else if (ui === 'fuel') buyFuel(Infinity);
-        else if (ui === 'garage') repairHull();
+      if (e.code === "KeyF") {
+        if (ui === "sell") sellAll();
+        else if (ui === "fuel") buyFuel(Infinity);
+        else if (ui === "garage") repairHull();
       }
     };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
   }, [open, ui, closeShop, sellAll, buyFuel, repairHull]);
 
   if (!open) return null;
@@ -85,11 +128,11 @@ export function Shop() {
           <h2>{TITLES[ui]}</h2>
           <div className="money">{fmt(money)} $</div>
           <button className="btn btn-small" onClick={closeShop}>
-            ✕ Fermer [Échap]
+            ✕ Fermer
           </button>
         </div>
 
-        {ui === 'sell' && (
+        {ui === "sell" && (
           <div className="tab-content">
             {cargoEntries.length === 0 ? (
               <p className="dim">Votre soute est vide. Allez creuser !</p>
@@ -105,9 +148,14 @@ export function Shop() {
                         </td>
                         <td>×{cargo[id]}</td>
                         <td>{fmt(TILES[id].value ?? 0)} $ / u.</td>
-                        <td className="right">{fmt((cargo[id] ?? 0) * (TILES[id].value ?? 0))} $</td>
                         <td className="right">
-                          <button className="btn btn-small" onClick={() => sellOre(id)}>
+                          {fmt((cargo[id] ?? 0) * (TILES[id].value ?? 0))} $
+                        </td>
+                        <td className="right">
+                          <button
+                            className="btn btn-small"
+                            onClick={() => sellOre(id)}
+                          >
                             Vendre
                           </button>
                         </td>
@@ -123,10 +171,14 @@ export function Shop() {
           </div>
         )}
 
-        {ui === 'fuel' && (
+        {ui === "fuel" && (
           <div className="tab-content">
             <p>
-              Réservoir : <b>{fmt(fuel)} / {fmt(maxFuel)} L</b> · Essence à {FUEL_PRICE} $/L
+              Réservoir :{" "}
+              <b>
+                {fmt(fuel)} / {fmt(maxFuel)} L
+              </b>{" "}
+              · Essence à {FUEL_PRICE} $/L
             </p>
             <div className="btn-row">
               {[10, 25, 50].map((l) => (
@@ -150,83 +202,101 @@ export function Shop() {
           </div>
         )}
 
-        {ui === 'garage' && (
+        {ui === "garage" && (
           <div className="tab-content">
-            <div className="upgrade-row">
-              <div>
-                <b>🔧 Réparation de la coque</b>
+            <h3 className="shop-section">Réparation</h3>
+            <div className="upgrade-row" data-kind="repair">
+              <div className="row-info">
+                <b>Réparation de la coque</b>
                 <div className="dim">
                   {fmt(hull)} / {fmt(maxHull)} PV · {REPAIR_PRICE} $/PV
                 </div>
               </div>
+              <div className="row-icon" />
               <button
-                className="btn"
+                className="btn buy-btn"
                 disabled={missingHull <= 0 || money < 1}
                 onClick={repairHull}
               >
-                Réparer [F] ({fmt(missingHull * REPAIR_PRICE)} $)
+                <span>Réparer [F]</span>
+                <span className="buy-price">
+                  {fmt(missingHull * REPAIR_PRICE)} $
+                </span>
               </button>
             </div>
+            <h3 className="shop-section">Améliorations</h3>
             {UPGRADE_ROWS.map(({ kind, title, tiers, statLabel }) => {
               const lvl = upgrades[kind];
               const cur = tiers[lvl];
               const next = tiers[lvl + 1];
               return (
-                <div key={kind} className="upgrade-row">
-                  <div>
+                <div key={kind} className="upgrade-row" data-kind={kind}>
+                  <div className="row-info">
                     <b>{title}</b>
                     <div className="dim">
                       Actuel : {cur.name} ({statLabel(cur.stat)})
                     </div>
                   </div>
+                  <div className="row-icon">
+                    {next && <UpgradeIcon kind={kind} tier={lvl + 1} />}
+                  </div>
                   {next ? (
-                    <div className="upgrade-next">
-                      <UpgradeIcon kind={kind} tier={lvl + 1} />
-                      <button
-                        className="btn"
-                        disabled={money < next.price}
-                        onClick={() => buyUpgrade(kind)}
-                      >
-                        {next.name} ({statLabel(next.stat)}) — {fmt(next.price)} $
-                      </button>
-                    </div>
+                    <button
+                      className="btn buy-btn"
+                      disabled={money < next.price}
+                      onClick={() => buyUpgrade(kind)}
+                    >
+                      <span>
+                        {next.name} ({statLabel(next.stat)})
+                      </span>
+                      <span className="buy-price">{fmt(next.price)} $</span>
+                    </button>
                   ) : (
-                    <span className="dim">Niveau max</span>
+                    <span className="tier-max">★ Niveau max</span>
                   )}
                 </div>
               );
             })}
-            <div className="upgrade-row">
-              <div>
-                <b>🧨 Dynamite</b>
+            <h3 className="shop-section">Consommables</h3>
+            <div className="upgrade-row" data-kind="dynamite">
+              <div className="row-info">
+                <b>Dynamite</b>
+                <div className="dim">(dans la soute : {dynamites})</div>
                 <div className="dim">
-                  Détruit les blocs alentour — seul moyen de casser les rochers. Mèche de 3 s,
-                  éloignez-vous ! · en stock : ×{dynamites}
+                  Détruit les blocs alentour. Mèche de 3s. Éloignez-vous !
                 </div>
               </div>
+              <div className="row-icon" />
               <button
-                className="btn"
+                className="btn buy-btn"
                 disabled={money < DYNAMITE_PRICE}
                 onClick={buyDynamite}
               >
-                Acheter — {fmt(DYNAMITE_PRICE)} $
+                <span>Acheter</span>
+                <span className="buy-price">{fmt(DYNAMITE_PRICE)} $</span>
               </button>
             </div>
-            <div className="upgrade-row">
-              <div>
-                <b>🌀 Téléporteur d'urgence</b>
-                <div className="dim">Retour instantané à la surface · usage unique · en stock : ×{teleporters}</div>
+            <div className="upgrade-row" data-kind="teleporter">
+              <div className="row-info">
+                <b>Téléporteur d'urgence</b>
+                <div className="dim">(dans la soute : {teleporters})</div>
+                <div className="dim">Retour instantané à la surface</div>
               </div>
+              <div className="row-icon" />
               <button
-                className="btn"
+                className="btn buy-btn"
                 disabled={money < TELEPORTER_PRICE}
                 onClick={buyTeleporter}
               >
-                Acheter — {fmt(TELEPORTER_PRICE)} $
+                <span>Acheter</span>
+                <span className="buy-price">{fmt(TELEPORTER_PRICE)} $</span>
               </button>
             </div>
           </div>
         )}
+        <div className="menu-hint dim">
+          ↑↓ / ZQSD naviguer · Entrée ou Espace valider · Échap ou E fermer
+        </div>
       </div>
     </div>
   );

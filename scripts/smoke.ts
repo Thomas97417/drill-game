@@ -205,6 +205,25 @@ check(
   'comptoir de vente ouvert avec [E]',
 );
 await page.screenshot({ path: '/tmp/drill-3-shop.png' });
+// navigation clavier : focus initial sur un bouton, flèches pour se déplacer
+const focusIdx = () =>
+  page.evaluate(() => {
+    const modal = document.querySelector('.modal');
+    const btns = Array.from(modal?.querySelectorAll('button') ?? []);
+    return btns.indexOf(document.activeElement as HTMLButtonElement);
+  });
+const firstIdx = await focusIdx();
+check(firstIdx >= 0, `focus clavier initial dans le menu (bouton n°${firstIdx})`);
+await page.keyboard.press('ArrowDown');
+const movedIdx = await focusIdx();
+check(movedIdx >= 0 && movedIdx !== firstIdx, 'flèches : focus déplacé au bouton suivant');
+// ZQSD/WASD naviguent aussi (KeyS = bas)
+await page.keyboard.press('KeyS');
+const movedIdx2 = await focusIdx();
+check(movedIdx2 >= 0 && movedIdx2 !== movedIdx, 'ZQSD : focus déplacé avec S');
+// retour au point de départ pour la suite du test
+await page.keyboard.press('KeyW');
+await page.keyboard.press('KeyW');
 // vente individuelle : uniquement le bronzium
 await page.click('.sell-table tr:has-text("Bronzium") button');
 s = await snap();
@@ -270,6 +289,23 @@ check(
   (await page.locator('.modal.shop:has-text("Station essence")').count()) > 0,
   'station essence ouverte avec [E]',
 );
+// Entrée valide le bouton focalisé (+10 L, premier bouton du panneau)
+const fuelBefore = (await snap()).fuel;
+await page.keyboard.press('Enter');
+await page.waitForTimeout(250);
+s = await snap();
+check(s.fuel > fuelBefore, `achat validé avec [Entrée] (+${(s.fuel - fuelBefore).toFixed(0)} L)`);
+// Espace valide aussi (on revide un peu le réservoir, le +10 L a pu le remplir)
+await page.evaluate(() => (window as any).__store.setState({ fuel: 80 }));
+// reprend le focus (perdu quand le bouton s'est grisé) : Fermer, puis +10 L
+await page.keyboard.press('ArrowDown');
+await page.keyboard.press('ArrowDown');
+await page.waitForTimeout(150);
+const fuelBefore2 = (await snap()).fuel;
+await page.keyboard.press('Space');
+await page.waitForTimeout(250);
+s = await snap();
+check(s.fuel > fuelBefore2, `achat validé avec [Espace] (+${(s.fuel - fuelBefore2).toFixed(0)} L)`);
 await page.keyboard.press('KeyF');
 await page.waitForTimeout(300);
 s = await snap();
@@ -286,32 +322,32 @@ check(
   'atelier ouvert avec [E]',
 );
 if (s.hull < 100) {
-  await page.click('.upgrade-row:has-text("Réparation") button');
+  await page.click('[data-kind="repair"] .buy-btn');
   s = await snap();
   check(s.hull >= 99.5, `réparation de la coque (${s.hull.toFixed(0)} PV)`);
 }
 const moneyBefore = (await snap()).money;
-await page.click('.upgrade-row:has-text("Foreuse") button');
+await page.click('[data-kind="drill"] .buy-btn');
 s = await snap();
 check(s.money === moneyBefore - 750, 'achat amélioration foreuse (−750 $)');
-await page.click('.upgrade-row:has-text("Moteur") button');
+await page.click('[data-kind="jetpack"] .buy-btn');
 s = await snap();
 check(s.money === moneyBefore - 750 - 750, 'achat amélioration moteur (−750 $)');
 // un réservoir/une coque achetés arrivent pleins, sans repasser par la pompe
-await page.click('.upgrade-row:has-text("🛡 Coque") button');
+await page.click('[data-kind="hull"] .buy-btn');
 s = await snap();
 check(s.hull === 170, `coque neuve livrée intacte (${s.hull.toFixed(0)} / 170 PV)`);
-await page.click('.upgrade-row:has-text("Réservoir") button');
+await page.click('[data-kind="tank"] .buy-btn');
 s = await snap();
 check(s.fuel === 150, `réservoir neuf livré plein (${s.fuel.toFixed(0)} / 150 L)`);
 const moneyBeforeCargo = (await snap()).money;
-await page.click('.upgrade-row:has-text("Soute") button');
+await page.click('[data-kind="cargo"] .buy-btn');
 s = await snap();
 check(s.money === moneyBeforeCargo - 750, 'achat amélioration soute (−750 $)');
-await page.click('.upgrade-row:has-text("Téléporteur") button');
+await page.click('[data-kind="teleporter"] .buy-btn');
 s = await snap();
 check(s.teleporters === 1, 'achat téléporteur');
-await page.click('.upgrade-row:has-text("Dynamite") button');
+await page.click('[data-kind="dynamite"] .buy-btn');
 s = await snap();
 check(s.dynamites === 1, 'achat dynamite');
 await page.screenshot({ path: '/tmp/drill-4-shop-upgrades.png' });

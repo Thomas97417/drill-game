@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect } from "react";
 import {
   CARGO_TIERS,
   DRILL_TIERS,
@@ -11,9 +11,10 @@ import {
   cargoCount,
   cargoValue,
   fmt,
-} from '../game/constants';
-import { maxCargoOf, useGameStore } from '../store';
-import { OreIcon } from './OreIcon';
+} from "../game/constants";
+import { maxCargoOf, useGameStore } from "../store";
+import { OreIcon } from "./OreIcon";
+import { useArrowNav } from "./useArrowNav";
 
 export function Inventory() {
   const ui = useGameStore((s) => s.ui);
@@ -25,27 +26,53 @@ export function Inventory() {
   const maxDepth = useGameStore((s) => s.maxDepth);
   const toggleInventory = useGameStore((s) => s.toggleInventory);
 
-  const open = ui === 'inventory';
+  const open = ui === "inventory";
+  useArrowNav(open);
 
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => {
-      if (e.code === 'Escape' || e.code === 'KeyE' || e.code === 'KeyI') toggleInventory();
+      if (e.code === "Escape" || e.code === "KeyE" || e.code === "KeyI")
+        toggleInventory();
     };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
   }, [open, toggleInventory]);
 
   if (!open) return null;
 
   const cargoEntries = ORE_IDS.filter((id) => (cargo[id] ?? 0) > 0);
   const gear = [
-    { label: '⚙️ Foreuse', tier: DRILL_TIERS[upgrades.drill], stat: `×${DRILL_TIERS[upgrades.drill].stat}` },
-    { label: '⛽ Réservoir', tier: TANK_TIERS[upgrades.tank], stat: `${TANK_TIERS[upgrades.tank].stat} L` },
-    { label: '🛡 Coque', tier: HULL_TIERS[upgrades.hull], stat: `${HULL_TIERS[upgrades.hull].stat} PV` },
-    { label: '🚀 Moteur', tier: JETPACK_TIERS[upgrades.jetpack], stat: `×${JETPACK_TIERS[upgrades.jetpack].stat}` },
-    { label: '📦 Soute', tier: CARGO_TIERS[upgrades.cargo], stat: `${CARGO_TIERS[upgrades.cargo].stat} minerais` },
-    { label: '❄️ Radiateur', tier: RADIATOR_TIERS[upgrades.radiator], stat: `−${Math.round(RADIATOR_TIERS[upgrades.radiator].stat * 100)} %` },
+    {
+      label: "⚙️ Foreuse",
+      tier: DRILL_TIERS[upgrades.drill],
+      stat: `×${DRILL_TIERS[upgrades.drill].stat}`,
+    },
+    {
+      label: "⛽ Réservoir",
+      tier: TANK_TIERS[upgrades.tank],
+      stat: `${TANK_TIERS[upgrades.tank].stat} L`,
+    },
+    {
+      label: "🛡 Coque",
+      tier: HULL_TIERS[upgrades.hull],
+      stat: `${HULL_TIERS[upgrades.hull].stat} PV`,
+    },
+    {
+      label: "🚀 Moteur",
+      tier: JETPACK_TIERS[upgrades.jetpack],
+      stat: `×${JETPACK_TIERS[upgrades.jetpack].stat}`,
+    },
+    {
+      label: "📦 Soute",
+      tier: CARGO_TIERS[upgrades.cargo],
+      stat: `${CARGO_TIERS[upgrades.cargo].stat} minerais`,
+    },
+    {
+      label: "❄️ Radiateur",
+      tier: RADIATOR_TIERS[upgrades.radiator],
+      stat: `−${Math.round(RADIATOR_TIERS[upgrades.radiator].stat * 100)} %`,
+    },
   ];
 
   return (
@@ -55,7 +82,7 @@ export function Inventory() {
           <h2>🎒 Inventaire</h2>
           <div className="money">{fmt(money)} $</div>
           <button className="btn btn-small" onClick={toggleInventory}>
-            ✕ Fermer [I]
+            ✕ Fermer
           </button>
         </div>
 
@@ -63,7 +90,9 @@ export function Inventory() {
           Soute ({cargoCount(cargo)}/{maxCargoOf(upgrades)})
         </h3>
         {cargoEntries.length === 0 ? (
-          <p className="dim">Soute vide — la valeur de vos trouvailles s'affichera ici.</p>
+          <p className="dim">
+            Soute vide — la valeur de vos trouvailles s'affichera ici.
+          </p>
         ) : (
           <table className="sell-table">
             <tbody>
@@ -74,7 +103,9 @@ export function Inventory() {
                     {TILES[id].name}
                   </td>
                   <td>×{cargo[id]}</td>
-                  <td className="right">{fmt((cargo[id] ?? 0) * (TILES[id].value ?? 0))} $</td>
+                  <td className="right">
+                    {fmt((cargo[id] ?? 0) * (TILES[id].value ?? 0))} $
+                  </td>
                 </tr>
               ))}
               <tr>
@@ -89,7 +120,8 @@ export function Inventory() {
 
         <h3 className="inv-section">Équipement consommable</h3>
         <p>
-          🌀 Téléporteurs : <b>×{teleporters}</b> · 🧨 Dynamites : <b>×{dynamites}</b>
+          🌀 Téléporteurs : <b>×{teleporters}</b> · 🧨 Dynamites :{" "}
+          <b>×{dynamites}</b>
         </p>
 
         <h3 className="inv-section">Améliorations installées</h3>
@@ -99,13 +131,18 @@ export function Inventory() {
               <tr key={g.label}>
                 <td>{g.label}</td>
                 <td>{g.tier.name}</td>
-                <td className="right">{g.stat !== g.tier.name ? g.stat : ''}</td>
+                <td className="right">
+                  {g.stat !== g.tier.name ? g.stat : ""}
+                </td>
               </tr>
             ))}
           </tbody>
         </table>
 
         <p className="dim">Profondeur record : {fmt(maxDepth)} m</p>
+        <div className="menu-hint dim">
+          ↑↓ / ZQSD naviguer · Entrée ou Espace valider · Échap ou E fermer
+        </div>
       </div>
     </div>
   );

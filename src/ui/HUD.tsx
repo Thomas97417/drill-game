@@ -6,9 +6,9 @@ import {
   cargoCount,
   cargoValue,
   fmt,
-} from '../game/constants';
-import { maxCargoOf, maxFuelOf, maxHullOf, useGameStore } from '../store';
-import { OreIcon } from './OreIcon';
+} from "../game/constants";
+import { maxCargoOf, maxFuelOf, maxHullOf, useGameStore } from "../store";
+import { OreIcon } from "./OreIcon";
 
 function Bar({
   label,
@@ -28,7 +28,10 @@ function Bar({
     <div className="bar">
       <span className="bar-label">{label}</span>
       <div className="bar-outer">
-        <div className="bar-inner" style={{ width: `${pct * 100}%`, background: color }} />
+        <div
+          className="bar-inner"
+          style={{ width: `${pct * 100}%`, background: color }}
+        />
         <span className="bar-text">
           {fmt(value)} / {fmt(max)} {unit}
         </span>
@@ -71,15 +74,18 @@ export function HUD() {
   return (
     <div className="hud">
       <div className="alerts">
-        {fuelLow && ui === 'playing' && (
+        {fuelLow && ui === "playing" && (
           <div className="fuel-alert">
-            ⚠ CARBURANT CRITIQUE — {fmt(fuel)} L restants
-            {depth > 0 ? ', remontez faire le plein !' : ' : passez à la pompe !'}
+            CARBURANT CRITIQUE
+            {depth > 0
+              ? " — remontez faire le plein !"
+              : " — passez à la pompe !"}
           </div>
         )}
-        {cargoFull && ui === 'playing' && (
+        {cargoFull && ui === "playing" && (
           <div className="cargo-alert">
-            ⚠ SOUTE PLEINE ({count}/{maxCargo}) — les minerais forés sont perdus !
+            SOUTE PLEINE ({count}/{maxCargo}) — les prochains minerais forés
+            seront perdus !
           </div>
         )}
       </div>
@@ -88,7 +94,7 @@ export function HUD() {
           label="⛽"
           value={fuel}
           max={maxFuel}
-          color={fuelLow ? '#e74c3c' : '#f5a623'}
+          color={fuelLow ? "#e74c3c" : "#f5a623"}
           unit="L"
         />
         <Bar label="🛡" value={hull} max={maxHull} color="#2ecc71" unit="PV" />
@@ -108,22 +114,29 @@ export function HUD() {
       </div>
 
       <div className="hud-bottom-center">
-        {nearBuilding && ui === 'playing' && (
+        {nearBuilding && ui === "playing" && (
           <div className="prompt-row">
-            <button className="btn btn-shop" onClick={() => openShop(nearBuilding)}>
-              [E]{' '}
-              {nearBuilding === 'sell'
-                ? 'Vendre les minerais'
-                : nearBuilding === 'fuel'
-                  ? 'Station essence'
-                  : 'Atelier'}
+            <button
+              className="btn btn-shop"
+              onClick={() => openShop(nearBuilding)}
+            >
+              [E]{" "}
+              {nearBuilding === "sell"
+                ? "Vendre les minerais"
+                : nearBuilding === "fuel"
+                  ? "Station essence"
+                  : "Atelier"}
             </button>
-            {nearBuilding === 'sell' && (
-              <button className="btn btn-quick" disabled={count === 0} onClick={sellAll}>
+            {nearBuilding === "sell" && (
+              <button
+                className="btn btn-quick"
+                disabled={count === 0}
+                onClick={sellAll}
+              >
                 [F] Tout vendre — {fmt(cargoValue(cargo))} $
               </button>
             )}
-            {nearBuilding === 'fuel' && (
+            {nearBuilding === "fuel" && (
               <button
                 className="btn btn-quick"
                 disabled={maxFuel - fuel < 0.5 || money < 1}
@@ -132,7 +145,7 @@ export function HUD() {
                 [F] Faire le plein ({fmt((maxFuel - fuel) * FUEL_PRICE)} $)
               </button>
             )}
-            {nearBuilding === 'garage' && (
+            {nearBuilding === "garage" && (
               <button
                 className="btn btn-quick"
                 disabled={maxHull - hull < 0.5 || money < 1}
@@ -148,7 +161,7 @@ export function HUD() {
           onClick={toggleInventory}
           title="Ouvrir l'inventaire [I]"
         >
-          <span className={cargoFull ? 'cargo-count-full' : 'dim'}>
+          <span className={cargoFull ? "cargo-count-full" : "dim"}>
             Soute {count}/{maxCargo}
           </span>
           {cargoEntries.map((id) => (
@@ -166,7 +179,7 @@ export function HUD() {
       <div className="hud-bottom-right">
         <button
           className="btn"
-          disabled={dynamites === 0 || ui !== 'playing'}
+          disabled={dynamites === 0 || ui !== "playing"}
           onClick={dropDynamite}
           title="Largue une dynamite sous la foreuse — mèche de 3 s"
         >
@@ -174,7 +187,7 @@ export function HUD() {
         </button>
         <button
           className="btn"
-          disabled={teleporters === 0 || depth === 0 || ui !== 'playing'}
+          disabled={teleporters === 0 || depth === 0 || ui !== "playing"}
           onClick={useTeleporter}
           title="Retour instantané à la surface"
         >
@@ -183,8 +196,8 @@ export function HUD() {
       </div>
 
       <div className="hud-bottom-left dim">
-        {layout === 'azerty' ? 'ZQSD' : 'WASD'}/flèches creuser · ↑ voler · E bâtiments · F
-        action · I inventaire · T téléporteur · X dynamite
+        {layout === "azerty" ? "ZQSD" : "WASD"}/flèches creuser · ↑ voler · E
+        bâtiments · F action · I inventaire · T téléporteur · X dynamite
       </div>
     </div>
   );

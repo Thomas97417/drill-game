@@ -331,6 +331,26 @@ body {
   padding-bottom: 4px;
 }
 
+/* en-têtes de sections de l'atelier (réparation / améliorations / consommables) */
+.shop-section {
+  margin: 18px 0 2px;
+  font-size: 13px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: #ffd54f;
+  border-bottom: 2px solid rgba(255, 213, 79, 0.25);
+  padding-bottom: 5px;
+}
+
+.shop-section:first-child {
+  margin-top: 4px;
+}
+
+/* la dernière rangée d'une section ne double pas le trait du titre suivant */
+.upgrade-row:has(+ .shop-section) {
+  border-bottom: none;
+}
+
 /* ── Boutons ────────────────────────────────────────────────────────────── */
 
 .btn {
@@ -358,6 +378,20 @@ body {
 .btn:disabled {
   opacity: 0.45;
   cursor: default;
+}
+
+/* bouton focalisé au clavier dans les menus */
+.modal button:focus {
+  outline: 2px solid #ffd54f;
+  outline-offset: 2px;
+}
+
+.menu-hint {
+  margin-top: 14px;
+  padding-top: 8px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  font-size: 11px;
+  text-align: center;
 }
 
 .btn-primary {
@@ -408,9 +442,9 @@ body {
   background: #1d1f27;
   border: 3px solid #000;
   border-radius: 10px;
-  padding: 20px;
-  width: min(560px, 92vw);
-  max-height: 86vh;
+  padding: 24px 28px;
+  width: min(760px, 94vw);
+  max-height: 88vh;
   overflow-y: auto;
   box-shadow: 0 8px 30px rgba(0, 0, 0, 0.6);
 }
@@ -499,12 +533,64 @@ body {
   font-weight: bold;
 }
 
+/* Rangée d'amélioration : grille à colonnes fixes — info extensible, icône,
+   bouton d'achat de largeur identique sur toutes les rangées */
 .upgrade-row {
-  display: flex;
+  display: grid;
+  grid-template-columns: 1fr 48px 320px;
   align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 10px 0;
+  gap: 14px;
+  padding: 11px 0;
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
   font-size: 14px;
+}
+
+.row-info {
+  min-width: 0;
+}
+
+.row-icon {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.upgrade-row .dim {
+  font-size: 12.5px;
+}
+
+/* bouton d'achat : nom du palier à gauche, prix aligné à droite en doré */
+.buy-btn {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  white-space: nowrap;
+  text-align: left;
+}
+
+.buy-btn .buy-price {
+  color: #ffd54f;
+  font-weight: bold;
+}
+
+.buy-btn:disabled .buy-price {
+  color: inherit;
+}
+
+/* palier maximal atteint : badge de la même largeur que les boutons */
+.tier-max {
+  display: block;
+  text-align: center;
+  padding: 8px 14px;
+  border: 2px dashed rgba(255, 213, 79, 0.35);
+  border-radius: 6px;
+  color: #ffd54f;
+  opacity: 0.75;
+  white-space: nowrap;
+}
+
+.btn-row .btn {
+  white-space: nowrap;
 }
