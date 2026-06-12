@@ -121,6 +121,7 @@ export class Engine {
   dynamites: Dynamite[] = [];
   flashes: Flash[] = [];
   floaters: Floater[] = [];
+  hurtTimer = 0; // animation de dégâts en cours (s restantes)
   camX = 0;
   camY = 0;
   viewW = 800; // px CSS
@@ -257,6 +258,8 @@ export class Engine {
       if (this.world.getTile(d.x, d.y) === 'lava') {
         const cooled = 1 - RADIATOR_TIERS[store.upgrades.radiator].stat;
         hull = Math.max(0, hull - LAVA_DPS * cooled * HULL_DMG_FACTOR[store.upgrades.hull] * dt);
+        // flash continu pendant la brûlure, sans spammer de texte
+        this.hurtTimer = Math.max(this.hurtTimer, 0.2);
       }
       // forage vers le bas : la foreuse s'aligne sur la colonne attaquée.
       // Pas d'alignement vertical en forage latéral : remonter la foreuse la
@@ -300,6 +303,7 @@ export class Engine {
       const dmg = (impact - SAFE_FALL_SPEED) * FALL_DMG_FACTOR * HULL_DMG_FACTOR[store.upgrades.hull];
       hull = Math.max(0, hull - dmg);
       this.emitBurst(p.x + p.w / 2, p.y + p.h, '#c9b9a0', 10);
+      this.hurt(dmg);
     }
 
     // plafond du ciel
@@ -331,7 +335,9 @@ export class Engine {
     // ── Dynamites : chute, mèche, explosion ──────────────────────────────────
     const blastDmg = this.updateDynamites(dt);
     if (blastDmg > 0) {
-      hull = Math.max(0, hull - blastDmg * HULL_DMG_FACTOR[store.upgrades.hull]);
+      const dmg = blastDmg * HULL_DMG_FACTOR[store.upgrades.hull];
+      hull = Math.max(0, hull - dmg);
+      this.hurt(dmg);
     }
 
     // ── Essence ──────────────────────────────────────────────────────────────
@@ -357,8 +363,12 @@ export class Engine {
     useGameStore.setState({ fuel, hull, depth, maxDepth, nearBuilding, day });
 
     if (nearBuilding && this.input.consume('interact')) store.openShop(nearBuilding);
-    if (nearBuilding === 'sell' && this.input.consume('sell')) store.sellAll();
-    if (nearBuilding === 'fuel' && this.input.consume('refuel')) store.buyFuel(Infinity);
+    // action rapide unifiée [F] selon le bâtiment
+    if (nearBuilding && this.input.consume('quick')) {
+      if (nearBuilding === 'sell') store.sellAll();
+      else if (nearBuilding === 'fuel') store.buyFuel(Infinity);
+      else store.repairHull();
+    }
 
     if (hull <= 0) store.triggerRescue('hull');
     else if (fuel <= 0 && p.grounded) store.triggerRescue('fuel');
@@ -565,6 +575,7 @@ export class Engine {
       dynamites: s.dynamites,
       maxDepth: s.maxDepth,
       time: this.time,
+      layout: s.layout,
       player: { x: this.player.x, y: this.player.y },
     });
   }
@@ -622,6 +633,22 @@ export class Engine {
     this.flashes = this.flashes.filter((f) => f.age < 0.45);
     for (const fl of this.floaters) fl.age += dt;
     this.floaters = this.floaters.filter((fl) => fl.age < FLOATER_LIFE);
+    this.hurtTimer = Math.max(0, this.hurtTimer - dt);
+  }
+
+  // animation de dégâts : flash + secousse + PV perdus en texte flottant
+  private hurt(dmg: number) {
+    this.hurtTimer = 0.5;
+    if (dmg >= 1) {
+      const p = this.player;
+      this.floaters.push({
+        x: p.x + p.w / 2,
+        y: p.y - 0.3,
+        text: `−${Math.round(dmg)} PV`,
+        color: '#ff5a4f',
+        age: 0,
+      });
+    }
   }
 }
 

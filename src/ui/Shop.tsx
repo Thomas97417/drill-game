@@ -58,12 +58,16 @@ export function Shop() {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => {
       if (e.code === 'Escape' || e.code === 'KeyE') closeShop();
-      if (e.code === 'KeyV' && ui === 'sell') sellAll();
-      if (e.code === 'KeyF' && ui === 'fuel') buyFuel(Infinity);
+      // action rapide unifiée
+      if (e.code === 'KeyF') {
+        if (ui === 'sell') sellAll();
+        else if (ui === 'fuel') buyFuel(Infinity);
+        else if (ui === 'garage') repairHull();
+      }
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [open, ui, closeShop, sellAll, buyFuel]);
+  }, [open, ui, closeShop, sellAll, buyFuel, repairHull]);
 
   if (!open) return null;
 
@@ -112,7 +116,7 @@ export function Shop() {
                   </tbody>
                 </table>
                 <button className="btn btn-primary" onClick={sellAll}>
-                  Tout vendre [V] — {fmt(total)} $
+                  Tout vendre [F] — {fmt(total)} $
                 </button>
               </>
             )}
@@ -160,7 +164,7 @@ export function Shop() {
                 disabled={missingHull <= 0 || money < 1}
                 onClick={repairHull}
               >
-                Réparer ({fmt(missingHull * REPAIR_PRICE)} $)
+                Réparer [F] ({fmt(missingHull * REPAIR_PRICE)} $)
               </button>
             </div>
             {UPGRADE_ROWS.map(({ kind, title, tiers, statLabel }) => {

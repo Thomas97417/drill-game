@@ -20,6 +20,7 @@ import {
 import { loadSave } from './game/save';
 
 export type UiMode = 'playing' | 'rescue' | 'inventory' | 'options' | BuildingId;
+export type KeyboardLayout = 'azerty' | 'qwerty';
 export const isBuilding = (ui: UiMode): ui is BuildingId =>
   ui === 'sell' || ui === 'fuel' || ui === 'garage';
 export type UpgradeKind = 'drill' | 'tank' | 'hull' | 'jetpack' | 'cargo' | 'radiator';
@@ -44,6 +45,7 @@ interface GameStore {
   depth: number;
   maxDepth: number;
   day: number;
+  layout: KeyboardLayout;
   nearBuilding: BuildingId | null;
   ui: UiMode;
   rescueReason: 'fuel' | 'hull';
@@ -64,6 +66,7 @@ interface GameStore {
   closeShop: () => void;
   toggleInventory: () => void;
   toggleOptions: () => void;
+  setLayout: (layout: KeyboardLayout) => void;
   triggerRescue: (reason: 'fuel' | 'hull') => void;
   doRescue: () => void;
   newGame: () => void;
@@ -96,6 +99,7 @@ const freshState = () => ({
   depth: 0,
   maxDepth: 0,
   day: 1,
+  layout: 'azerty' as KeyboardLayout,
   nearBuilding: null as BuildingId | null,
   ui: 'playing' as UiMode,
   rescueReason: 'fuel' as const,
@@ -120,6 +124,7 @@ export const useGameStore = create<GameStore>((set) => ({
           cargo: saved.upgrades.cargo ?? 0,
           radiator: saved.upgrades.radiator ?? 0,
         },
+        layout: saved.layout ?? ('azerty' as KeyboardLayout),
         teleporters: saved.teleporters,
         dynamites: saved.dynamites ?? 0,
         maxDepth: saved.maxDepth,
@@ -225,6 +230,8 @@ export const useGameStore = create<GameStore>((set) => ({
     set((s) =>
       s.ui === 'options' ? { ui: 'playing' } : s.ui === 'playing' ? { ui: 'options' } : s,
     ),
+
+  setLayout: (layout) => set({ layout }),
 
   triggerRescue: (reason) => set({ ui: 'rescue', rescueReason: reason }),
 

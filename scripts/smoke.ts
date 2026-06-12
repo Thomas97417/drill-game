@@ -193,6 +193,11 @@ async function walkTo(x: number) {
 
 // ── Comptoir de vente (x ≈ 3,5) ───────────────────────────────────────────
 await walkTo(3.5);
+// l'action rapide [F] est proposée en bas de l'écran
+check(
+  (await page.locator('.btn-quick:has-text("Tout vendre")').count()) > 0,
+  'action rapide [F] affichée en bas de l\'écran',
+);
 await page.keyboard.press('KeyE');
 await page.waitForTimeout(400);
 check(
@@ -204,11 +209,11 @@ await page.screenshot({ path: '/tmp/drill-3-shop.png' });
 await page.click('.sell-table tr:has-text("Bronzium") button');
 s = await snap();
 check(s.money === 1800 && s.bronze === 0 && s.iron === 200, 'vente individuelle du bronzium (+1 800 $)');
-// raccourci V : vend tout le reste
-await page.keyboard.press('KeyV');
+// action rapide F : vend tout le reste
+await page.keyboard.press('KeyF');
 await page.waitForTimeout(300);
 s = await snap();
-check(s.money >= 7500 && s.iron === 0, `tout vendu avec [V] (${s.money} $)`);
+check(s.money >= 7500 && s.iron === 0, `tout vendu avec [F] (${s.money} $)`);
 
 // E doit fermer le menu sans le rouvrir aussitôt
 await page.keyboard.press('KeyE');
@@ -222,6 +227,18 @@ check(
   (await page.locator('.modal.options:has-text("Nouvelle partie")').count()) > 0,
   "dialog options ouverte via l'engrenage",
 );
+// choix de disposition clavier (AZERTY par défaut)
+check(
+  (await page.locator('.layout-btns .btn-primary:has-text("AZERTY")').count()) > 0,
+  'AZERTY sélectionné par défaut',
+);
+await page.click('.layout-btns button:has-text("QWERTY")');
+await page.waitForTimeout(200);
+check(
+  (await page.locator('.hud-bottom-left:has-text("WASD")').count()) > 0,
+  'aides affichées en WASD après bascule QWERTY',
+);
+await page.click('.layout-btns button:has-text("AZERTY")');
 await page.keyboard.press('Escape');
 await page.waitForTimeout(300);
 check((await snap()).ui === 'playing', 'dialog options fermée avec [Échap]');
@@ -347,6 +364,23 @@ await page.keyboard.press('KeyT');
 await page.waitForTimeout(400);
 s = await snap();
 check(s.depth === 0 && s.teleporters === 0, 'téléportation vers la surface');
+
+// ── Dégâts de chute : animation + PV perdus en texte flottant ─────────────
+await page.evaluate(() => {
+  const e = (window as any).__engine;
+  e.player.y = -7;
+  e.player.vy = 0;
+});
+let sawHurt = false;
+for (let i = 0; i < 30 && !sawHurt; i++) {
+  await page.waitForTimeout(100);
+  sawHurt = await page.evaluate(() => {
+    const e = (window as any).__engine;
+    return e.hurtTimer > 0 && e.floaters.some((f: any) => f.text.includes('PV'));
+  });
+}
+check(sawHurt, 'animation de dégâts + PV perdus affichés à la chute');
+await page.waitForTimeout(800);
 
 // ── Lave : forer dedans endommage la coque ────────────────────────────────
 const hullBefore = (await snap()).hull;

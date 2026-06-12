@@ -1,19 +1,23 @@
 import { useEffect } from 'react';
-import { useGameStore } from '../store';
+import { useGameStore, type KeyboardLayout } from '../store';
 
-const CONTROLS: [string, string][] = [
-  ['← → ↓', 'Se déplacer et creuser'],
-  ['↑', 'Voler (réacteur dorsal)'],
-  ['E', 'Entrer dans un bâtiment / fermer un menu'],
-  ['I', 'Inventaire'],
-  ['V', 'Tout vendre (au comptoir)'],
-  ['F', 'Faire le plein (à la pompe)'],
-  ['T', 'Téléporteur d\'urgence'],
-  ['X', 'Larguer une dynamite'],
-];
+function controls(layout: KeyboardLayout): [string, string][] {
+  const move = layout === 'azerty' ? 'ZQSD' : 'WASD';
+  return [
+    [`${move} / flèches`, 'Se déplacer et creuser (gauche, droite, bas)'],
+    [layout === 'azerty' ? 'Z / ↑' : 'W / ↑', 'Voler (réacteur dorsal)'],
+    ['E', 'Entrer dans un bâtiment / fermer un menu'],
+    ['F', 'Action rapide du bâtiment (vendre, plein, réparer)'],
+    ['I', 'Inventaire'],
+    ['T', "Téléporteur d'urgence"],
+    ['X', 'Larguer une dynamite'],
+  ];
+}
 
 export function Options() {
   const ui = useGameStore((s) => s.ui);
+  const layout = useGameStore((s) => s.layout);
+  const setLayout = useGameStore((s) => s.setLayout);
   const toggleOptions = useGameStore((s) => s.toggleOptions);
   const newGame = useGameStore((s) => s.newGame);
 
@@ -40,10 +44,26 @@ export function Options() {
           </button>
         </div>
 
+        <h3 className="inv-section">Clavier</h3>
+        <div className="layout-btns">
+          <button
+            className={`btn ${layout === 'azerty' ? 'btn-primary' : ''}`}
+            onClick={() => setLayout('azerty')}
+          >
+            AZERTY
+          </button>
+          <button
+            className={`btn ${layout === 'qwerty' ? 'btn-primary' : ''}`}
+            onClick={() => setLayout('qwerty')}
+          >
+            QWERTY
+          </button>
+        </div>
+
         <h3 className="inv-section">Contrôles</h3>
         <table className="sell-table">
           <tbody>
-            {CONTROLS.map(([key, label]) => (
+            {controls(layout).map(([key, label]) => (
               <tr key={key}>
                 <td className="key-cell">{key}</td>
                 <td>{label}</td>

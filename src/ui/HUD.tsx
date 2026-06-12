@@ -1,4 +1,12 @@
-import { ORE_IDS, TILES, cargoCount, cargoValue, fmt } from '../game/constants';
+import {
+  FUEL_PRICE,
+  ORE_IDS,
+  REPAIR_PRICE,
+  TILES,
+  cargoCount,
+  cargoValue,
+  fmt,
+} from '../game/constants';
 import { maxCargoOf, maxFuelOf, maxHullOf, useGameStore } from '../store';
 import { OreIcon } from './OreIcon';
 
@@ -47,6 +55,10 @@ export function HUD() {
   const dropDynamite = useGameStore((s) => s.dropDynamite);
   const toggleInventory = useGameStore((s) => s.toggleInventory);
   const toggleOptions = useGameStore((s) => s.toggleOptions);
+  const layout = useGameStore((s) => s.layout);
+  const sellAll = useGameStore((s) => s.sellAll);
+  const buyFuel = useGameStore((s) => s.buyFuel);
+  const repairHull = useGameStore((s) => s.repairHull);
 
   const maxFuel = maxFuelOf(upgrades);
   const maxHull = maxHullOf(upgrades);
@@ -97,14 +109,39 @@ export function HUD() {
 
       <div className="hud-bottom-center">
         {nearBuilding && ui === 'playing' && (
-          <button className="btn btn-shop" onClick={() => openShop(nearBuilding)}>
-            [E]{' '}
-            {nearBuilding === 'sell'
-              ? 'Vendre les minerais'
-              : nearBuilding === 'fuel'
-                ? 'Station essence'
-                : 'Atelier'}
-          </button>
+          <div className="prompt-row">
+            <button className="btn btn-shop" onClick={() => openShop(nearBuilding)}>
+              [E]{' '}
+              {nearBuilding === 'sell'
+                ? 'Vendre les minerais'
+                : nearBuilding === 'fuel'
+                  ? 'Station essence'
+                  : 'Atelier'}
+            </button>
+            {nearBuilding === 'sell' && (
+              <button className="btn btn-quick" disabled={count === 0} onClick={sellAll}>
+                [F] Tout vendre — {fmt(cargoValue(cargo))} $
+              </button>
+            )}
+            {nearBuilding === 'fuel' && (
+              <button
+                className="btn btn-quick"
+                disabled={maxFuel - fuel < 0.5 || money < 1}
+                onClick={() => buyFuel(Infinity)}
+              >
+                [F] Faire le plein ({fmt((maxFuel - fuel) * FUEL_PRICE)} $)
+              </button>
+            )}
+            {nearBuilding === 'garage' && (
+              <button
+                className="btn btn-quick"
+                disabled={maxHull - hull < 0.5 || money < 1}
+                onClick={repairHull}
+              >
+                [F] Réparer ({fmt((maxHull - hull) * REPAIR_PRICE)} $)
+              </button>
+            )}
+          </div>
         )}
         <div
           className="panel cargo cargo-clickable"
@@ -146,7 +183,8 @@ export function HUD() {
       </div>
 
       <div className="hud-bottom-left dim">
-        ← → ↓ creuser · ↑ voler · E bâtiments · I inventaire · T téléporteur · X dynamite
+        {layout === 'azerty' ? 'ZQSD' : 'WASD'}/flèches creuser · ↑ voler · E bâtiments · F
+        action · I inventaire · T téléporteur · X dynamite
       </div>
     </div>
   );

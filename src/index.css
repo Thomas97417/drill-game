@@ -234,6 +234,26 @@ body {
   white-space: nowrap;
 }
 
+.layout-btns {
+  display: flex;
+  gap: 8px;
+}
+
+.prompt-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.btn-quick {
+  background: #1f6e8c;
+  font-weight: bold;
+}
+
+.btn-quick:hover:not(:disabled) {
+  background: #2a87aa;
+}
+
 .btn-danger {
   background: #8e2323;
 }

@@ -721,6 +721,12 @@ function drawPlayer(e: Engine, ctx: CanvasRenderingContext2D, camPxX: number, ca
     px += Math.sin(e.time * 70) * 1.6;
     py += Math.cos(e.time * 90) * 1.2;
   }
+  // secousse de dégâts, plus violente que la vibration de forage
+  if (e.hurtTimer > 0) {
+    const k = e.hurtTimer / 0.5;
+    px += Math.sin(e.time * 95) * 3.5 * k;
+    py += Math.cos(e.time * 80) * 2.5 * k;
+  }
 
   const dir: 'left' | 'right' | 'down' = e.digging ? e.digging.dir : p.facing > 0 ? 'right' : 'left';
 
@@ -953,6 +959,14 @@ function drawPlayer(e: Engine, ctx: CanvasRenderingContext2D, camPxX: number, ca
   // trépan animé selon le palier de foreuse
   const spin = e.time * (e.digging ? 26 : 5);
   drawDrillBit(ctx, dir, w, h, spin, up.drill, e.time);
+
+  // flash rouge clignotant quand on encaisse des dégâts
+  if (e.hurtTimer > 0) {
+    const k = e.hurtTimer / 0.5;
+    const blink = Math.sin(e.time * 42) > 0 ? 1 : 0.35;
+    ctx.fillStyle = `rgba(255,60,45,${0.38 * Math.min(1, k) * blink})`;
+    roundRect(ctx, -w * 0.62, -h * 0.5, w * 1.24, h * 1.05, 9);
+  }
 
   ctx.restore();
 }

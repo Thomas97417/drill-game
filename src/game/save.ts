@@ -19,6 +19,7 @@ export interface SaveData {
   dynamites: number;
   maxDepth: number;
   time: number; // horloge de jeu (cycle jour/nuit, compteur de jours)
+  layout?: 'azerty' | 'qwerty';
   player: { x: number; y: number };
 }
 

@@ -8,8 +8,8 @@ const BINDINGS = {
   teleport: ['KeyT'],
   dynamite: ['KeyX'],
   inventory: ['KeyI'],
-  sell: ['KeyV'],
-  refuel: ['KeyF'],
+  // action rapide contextuelle du bâtiment (vendre / plein / réparer)
+  quick: ['KeyF'],
 } as const;
 
 type Action = keyof typeof BINDINGS;
