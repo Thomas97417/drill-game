@@ -12,8 +12,9 @@ import {
   cargoValue,
   fmt,
 } from "../game/constants";
-import { maxCargoOf, useGameStore } from "../store";
+import { maxCargoOf, useGameStore, type UpgradeKind } from "../store";
 import { OreIcon } from "./OreIcon";
+import { UpgradeIcon } from "./UpgradeIcon";
 import { useArrowNav } from "./useArrowNav";
 
 export function Inventory() {
@@ -44,31 +45,37 @@ export function Inventory() {
   const cargoEntries = ORE_IDS.filter((id) => (cargo[id] ?? 0) > 0);
   const gear = [
     {
+      kind: "drill" as UpgradeKind,
       label: "Foreuse",
       tier: DRILL_TIERS[upgrades.drill],
       stat: `×${DRILL_TIERS[upgrades.drill].stat}`,
     },
     {
+      kind: "tank" as UpgradeKind,
       label: "Réservoir",
       tier: TANK_TIERS[upgrades.tank],
       stat: `${TANK_TIERS[upgrades.tank].stat} L`,
     },
     {
+      kind: "hull" as UpgradeKind,
       label: "Coque",
       tier: HULL_TIERS[upgrades.hull],
       stat: `${HULL_TIERS[upgrades.hull].stat} PV`,
     },
     {
+      kind: "jetpack" as UpgradeKind,
       label: "Moteur",
       tier: JETPACK_TIERS[upgrades.jetpack],
       stat: `×${JETPACK_TIERS[upgrades.jetpack].stat}`,
     },
     {
+      kind: "cargo" as UpgradeKind,
       label: "Soute",
       tier: CARGO_TIERS[upgrades.cargo],
       stat: `${CARGO_TIERS[upgrades.cargo].stat} stockage`,
     },
     {
+      kind: "radiator" as UpgradeKind,
       label: "Radiateur",
       tier: RADIATOR_TIERS[upgrades.radiator],
       stat: `−${Math.round(RADIATOR_TIERS[upgrades.radiator].stat * 100)} %`,
@@ -134,7 +141,10 @@ export function Inventory() {
           <tbody>
             {gear.map((g) => (
               <tr key={g.label}>
-                <td>{g.label}</td>
+                <td className="ore-cell">
+                  <UpgradeIcon kind={g.kind} tier={upgrades[g.kind]} size={34} />
+                  {g.label}
+                </td>
                 <td>{g.tier.name}</td>
                 <td className="right dim">
                   {g.stat !== g.tier.name ? g.stat : ""}
