@@ -8,7 +8,7 @@ import {
   RADIATOR_TIERS,
   TANK_TIERS,
   TILES,
-  cargoCount,
+  cargoLoad,
   cargoValue,
   fmt,
 } from "../game/constants";
@@ -66,7 +66,7 @@ export function Inventory() {
     {
       label: "Soute",
       tier: CARGO_TIERS[upgrades.cargo],
-      stat: `${CARGO_TIERS[upgrades.cargo].stat} minerais`,
+      stat: `${CARGO_TIERS[upgrades.cargo].stat} stockage`,
     },
     {
       label: "Radiateur",
@@ -87,7 +87,7 @@ export function Inventory() {
         </div>
 
         <h3 className="shop-section">
-          Soute ({cargoCount(cargo)}/{maxCargoOf(upgrades)})
+          Soute ({cargoLoad(cargo)}/{maxCargoOf(upgrades)})
         </h3>
         {cargoEntries.length === 0 ? (
           <p className="empty-state">
@@ -101,6 +101,7 @@ export function Inventory() {
                   <td className="ore-cell">
                     <OreIcon kind={id} size={24} />
                     {TILES[id].name}
+                    <span className="dim ore-size">▣{TILES[id].size}</span>
                   </td>
                   <td className="dim">×{cargo[id]}</td>
                   <td className="right gold">

@@ -296,6 +296,12 @@ body {
   gap: 8px;
 }
 
+/* emplacements de soute occupés par le minerai */
+.ore-size {
+  font-size: 11px;
+  letter-spacing: 0.5px;
+}
+
 .upgrade-next {
   display: flex;
   align-items: center;

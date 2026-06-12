@@ -3,7 +3,7 @@ import {
   ORE_IDS,
   REPAIR_PRICE,
   TILES,
-  cargoCount,
+  cargoLoad,
   cargoValue,
   fmt,
 } from "../game/constants";
@@ -66,7 +66,7 @@ export function HUD() {
   const maxFuel = maxFuelOf(upgrades);
   const maxHull = maxHullOf(upgrades);
   const maxCargo = maxCargoOf(upgrades);
-  const count = cargoCount(cargo);
+  const count = cargoLoad(cargo);
   const cargoFull = count >= maxCargo;
   const fuelLow = fuel / maxFuel < 0.25;
   const cargoEntries = ORE_IDS.filter((id) => (cargo[id] ?? 0) > 0);

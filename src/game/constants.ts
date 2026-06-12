@@ -34,6 +34,7 @@ export interface TileDef {
   solid: boolean;
   diggable: boolean;
   value?: number;
+  size?: number; // emplacements de soute occupés (minerais)
   base: string; // couleur de fond
   speckle: string; // couleur des grains
   gem?: string; // couleur du minerai incrusté
@@ -107,6 +108,7 @@ export const TILES: Record<TileKind, TileDef> = {
   },
   iron: {
     name: "Ironium",
+    size: 1,
     hardness: 1.2,
     solid: true,
     diggable: true,
@@ -117,6 +119,7 @@ export const TILES: Record<TileKind, TileDef> = {
   },
   bronze: {
     name: "Bronzium",
+    size: 1,
     hardness: 1.6,
     solid: true,
     diggable: true,
@@ -127,6 +130,7 @@ export const TILES: Record<TileKind, TileDef> = {
   },
   silver: {
     name: "Silverium",
+    size: 1,
     hardness: 2,
     solid: true,
     diggable: true,
@@ -137,6 +141,7 @@ export const TILES: Record<TileKind, TileDef> = {
   },
   gold: {
     name: "Goldium",
+    size: 2,
     hardness: 2.6,
     solid: true,
     diggable: true,
@@ -147,6 +152,7 @@ export const TILES: Record<TileKind, TileDef> = {
   },
   platinum: {
     name: "Platinium",
+    size: 2,
     hardness: 3.4,
     solid: true,
     diggable: true,
@@ -157,6 +163,7 @@ export const TILES: Record<TileKind, TileDef> = {
   },
   einsteinium: {
     name: "Einsteinium",
+    size: 3,
     hardness: 4.2,
     solid: true,
     diggable: true,
@@ -167,6 +174,7 @@ export const TILES: Record<TileKind, TileDef> = {
   },
   emerald: {
     name: "Émeraude",
+    size: 3,
     hardness: 5,
     solid: true,
     diggable: true,
@@ -177,6 +185,7 @@ export const TILES: Record<TileKind, TileDef> = {
   },
   ruby: {
     name: "Rubis",
+    size: 4,
     hardness: 6,
     solid: true,
     diggable: true,
@@ -187,6 +196,7 @@ export const TILES: Record<TileKind, TileDef> = {
   },
   diamond: {
     name: "Diamant",
+    size: 5,
     hardness: 7.5,
     solid: true,
     diggable: true,
@@ -197,6 +207,7 @@ export const TILES: Record<TileKind, TileDef> = {
   },
   amazonite: {
     name: "Amazonite",
+    size: 6,
     hardness: 9,
     solid: true,
     diggable: true,
@@ -420,8 +431,12 @@ export function cargoValue(cargo: Partial<Record<OreId, number>>): number {
   );
 }
 
-export function cargoCount(cargo: Partial<Record<OreId, number>>): number {
-  return ORE_IDS.reduce((n, id) => n + (cargo[id] ?? 0), 0);
+// Place occupée dans la soute : chaque minerai pèse sa taille de stockage
+export function cargoLoad(cargo: Partial<Record<OreId, number>>): number {
+  return ORE_IDS.reduce(
+    (n, id) => n + (cargo[id] ?? 0) * (TILES[id].size ?? 1),
+    0,
+  );
 }
 
 export function fmt(n: number): string {

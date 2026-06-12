@@ -12,7 +12,7 @@ import {
   TANK_TIERS,
   TELEPORTER_PRICE,
   TILES,
-  cargoCount,
+  cargoLoad,
   cargoValue,
   fmt,
 } from "../game/constants";
@@ -62,7 +62,7 @@ const UPGRADE_ROWS: {
     kind: "cargo",
     title: "Soute (stockage)",
     tiers: CARGO_TIERS,
-    statLabel: (s) => `${s} minerais`,
+    statLabel: (s) => `${s} stockage`,
   },
   {
     kind: "radiator",
@@ -137,7 +137,7 @@ export function Shop() {
         {ui === "sell" && (
           <div className="tab-content">
             <h3 className="shop-section">
-              Cargaison ({cargoCount(cargo)}/{maxCargoOf(upgrades)})
+              Cargaison ({cargoLoad(cargo)}/{maxCargoOf(upgrades)})
             </h3>
             {cargoEntries.length === 0 ? (
               <p className="empty-state">
@@ -152,6 +152,7 @@ export function Shop() {
                         <td className="ore-cell">
                           <OreIcon kind={id} size={30} />
                           {TILES[id].name}
+                          <span className="dim ore-size">▣{TILES[id].size}</span>
                         </td>
                         <td className="dim">×{cargo[id]}</td>
                         <td className="dim">

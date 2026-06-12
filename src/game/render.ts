@@ -758,11 +758,15 @@ function drawPlayer(e: Engine, ctx: CanvasRenderingContext2D, camPxX: number, ca
     ctx.save();
     ctx.translate(packX, nozzleY + h * 0.08);
     ctx.rotate(rear * 0.24);
+    // lueur additive : elle ne peut qu'éclaircir, donc aucun halo sombre
+    // même sur le ciel clair de jour
     const glow = ctx.createRadialGradient(0, h * 0.25, 2, 0, h * 0.25, h * 0.9);
     glow.addColorStop(0, js.glow);
     glow.addColorStop(1, fadedOut(js.glow));
+    ctx.globalCompositeOperation = 'lighter';
     ctx.fillStyle = glow;
     ctx.fillRect(-w * 0.8, -h * 0.1, w * 1.6, h * 1.5);
+    ctx.globalCompositeOperation = 'source-over';
     const fs = js.nozzles === 2 ? 0.72 : 1;
     for (const off of nozzleOffs) {
       ctx.fillStyle = js.flame[0];
@@ -1000,13 +1004,15 @@ function drawDrillBit(
   }
   const len = w * st.len;
   const rad = h * (0.2 + tier * 0.012);
-  // lueur des trépans haut de gamme (diamant, plasma)
+  // lueur des trépans haut de gamme, en mode additif (jamais de halo sombre)
   if (st.glow) {
     const g = ctx.createRadialGradient(len * 0.5, 0, 2, len * 0.5, 0, len * 0.9);
     g.addColorStop(0, st.glow);
     g.addColorStop(1, fadedOut(st.glow));
+    ctx.globalCompositeOperation = 'lighter';
     ctx.fillStyle = g;
     ctx.fillRect(-len * 0.4, -len, len * 2, len * 2);
+    ctx.globalCompositeOperation = 'source-over';
   }
   // cône
   const grad = ctx.createLinearGradient(0, -rad, 0, rad);

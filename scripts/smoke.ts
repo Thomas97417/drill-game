@@ -119,6 +119,17 @@ await page.evaluate(() => (window as any).__store.setState({ cargo: {} }));
 await page.waitForTimeout(200);
 check((await page.locator('.cargo-alert').count()) === 0, 'alerte soute masquée une fois vidée');
 
+// les minerais précieux occupent plus de stockage (Goldium = 2)
+await page.evaluate(() => {
+  const st = (window as any).__store.getState();
+  for (let i = 0; i < 8; i++) st.addCargo('gold');
+});
+const goldCount = await page.evaluate(
+  () => (window as any).__store.getState().cargo.gold ?? 0,
+);
+check(goldCount === 5, `taille de stockage par valeur (${goldCount} Goldium = 10 stockage)`);
+await page.evaluate(() => (window as any).__store.setState({ cargo: {} }));
+
 // le canvas garde sa taille CSS malgré le devicePixelRatio de 2
 const cssSize = await page.evaluate(() => {
   const c = document.querySelector('canvas.game-canvas') as HTMLCanvasElement;

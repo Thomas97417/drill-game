@@ -12,7 +12,7 @@ import {
   TANK_TIERS,
   TELEPORTER_PRICE,
   TILES,
-  cargoCount,
+  cargoLoad,
   cargoValue,
   type BuildingId,
   type OreId,
@@ -134,7 +134,8 @@ export const useGameStore = create<GameStore>((set) => ({
   addCargo: (ore) =>
     set((s) => {
       // soute pleine : le minerai foré est perdu
-      if (cargoCount(s.cargo) >= maxCargoOf(s.upgrades)) return s;
+      if (cargoLoad(s.cargo) + (TILES[ore].size ?? 1) > maxCargoOf(s.upgrades))
+        return s;
       return { cargo: { ...s.cargo, [ore]: (s.cargo[ore] ?? 0) + 1 } };
     }),
 

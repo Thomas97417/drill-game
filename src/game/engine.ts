@@ -23,7 +23,7 @@ import {
   TILE,
   TILES,
   WORLD_W,
-  cargoCount,
+  cargoLoad,
   digBurn,
   digTime,
   type BuildingId,
@@ -273,7 +273,7 @@ export class Engine {
         const def = this.world.dig(d.x, d.y);
         if (def?.value) {
           const s = useGameStore.getState();
-          if (cargoCount(s.cargo) >= maxCargoOf(s.upgrades)) {
+          if (cargoLoad(s.cargo) + (def.size ?? 1) > maxCargoOf(s.upgrades)) {
             // soute pleine : le minerai s'éparpille, perdu
             this.emitBurst(d.x + 0.5, d.y + 0.5, def.gem ?? def.speckle, 10);
             this.floaters.push({ x: d.x + 0.5, y: d.y + 0.2, text: 'Soute pleine !', color: '#ffb74f', age: 0 });
