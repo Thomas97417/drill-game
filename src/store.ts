@@ -6,6 +6,8 @@ import {
   FUEL_PRICE,
   HULL_TIERS,
   JETPACK_TIERS,
+  ORE_IDS,
+  RADIATOR_TIERS,
   REPAIR_PRICE,
   TANK_TIERS,
   TELEPORTER_PRICE,
@@ -20,7 +22,7 @@ import { loadSave } from './game/save';
 export type UiMode = 'playing' | 'rescue' | 'inventory' | BuildingId;
 export const isBuilding = (ui: UiMode): ui is BuildingId =>
   ui === 'sell' || ui === 'fuel' || ui === 'garage';
-export type UpgradeKind = 'drill' | 'tank' | 'hull' | 'jetpack' | 'cargo';
+export type UpgradeKind = 'drill' | 'tank' | 'hull' | 'jetpack' | 'cargo' | 'radiator';
 
 export interface Upgrades {
   drill: number;
@@ -28,6 +30,7 @@ export interface Upgrades {
   hull: number;
   jetpack: number;
   cargo: number;
+  radiator: number;
 }
 
 interface GameStore {
@@ -76,6 +79,7 @@ const TIERS = {
   hull: HULL_TIERS,
   jetpack: JETPACK_TIERS,
   cargo: CARGO_TIERS,
+  radiator: RADIATOR_TIERS,
 } as const;
 
 const saved = loadSave();
@@ -85,7 +89,7 @@ const freshState = () => ({
   fuel: TANK_TIERS[0].stat,
   hull: HULL_TIERS[0].stat,
   cargo: {} as Partial<Record<OreId, number>>,
-  upgrades: { drill: 0, tank: 0, hull: 0, jetpack: 0, cargo: 0 },
+  upgrades: { drill: 0, tank: 0, hull: 0, jetpack: 0, cargo: 0, radiator: 0 },
   teleporters: 0,
   dynamites: 0,
   depth: 0,
@@ -104,12 +108,16 @@ export const useGameStore = create<GameStore>((set) => ({
         money: saved.money,
         fuel: saved.fuel,
         hull: saved.hull,
-        cargo: saved.cargo,
+        // on écarte les minerais qui n'existent plus (ex. charbon)
+        cargo: Object.fromEntries(
+          Object.entries(saved.cargo).filter(([k]) => (ORE_IDS as string[]).includes(k)),
+        ),
         // ?? 0 : sauvegardes antérieures à ces améliorations
         upgrades: {
           ...saved.upgrades,
           jetpack: saved.upgrades.jetpack ?? 0,
           cargo: saved.upgrades.cargo ?? 0,
+          radiator: saved.upgrades.radiator ?? 0,
         },
         teleporters: saved.teleporters,
         dynamites: saved.dynamites ?? 0,

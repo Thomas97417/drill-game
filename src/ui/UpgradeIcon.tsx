@@ -16,6 +16,7 @@ export function UpgradeIcon({ kind, tier, size = 40 }: { kind: UpgradeKind; tier
     else if (kind === 'hull') paintHull(ctx, S, tier);
     else if (kind === 'tank') paintTank(ctx, S, tier);
     else if (kind === 'cargo') paintCargo(ctx, S, tier);
+    else if (kind === 'radiator') paintRadiator(ctx, S, tier);
     else paintJet(ctx, S, tier);
   }, [kind, tier, size]);
 
@@ -110,11 +111,11 @@ function paintHull(ctx: CanvasRenderingContext2D, S: number, tier: number) {
       ctx.fillRect(x + w * bx, y + h * by, 3, 3);
     }
   }
-  // liseré (doré palier 3, énergétique palier 4)
+  // liseré (doré à l'avant-dernier palier, énergétique au dernier)
   if (hs.trim) {
     ctx.strokeStyle = hs.trim;
     ctx.lineWidth = 3;
-    if (tier >= 4) {
+    if (tier >= 6) {
       ctx.shadowColor = hs.trim;
       ctx.shadowBlur = 8;
     }
@@ -203,7 +204,7 @@ function paintCargo(ctx: CanvasRenderingContext2D, S: number, tier: number) {
   if (hs.trim) {
     ctx.strokeStyle = hs.trim;
     ctx.lineWidth = 3;
-    if (tier >= 4) {
+    if (tier >= 6) {
       ctx.shadowColor = hs.trim;
       ctx.shadowBlur = 8;
     }
@@ -212,6 +213,47 @@ function paintCargo(ctx: CanvasRenderingContext2D, S: number, tier: number) {
     ctx.stroke();
     ctx.shadowBlur = 0;
   }
+}
+
+function paintRadiator(ctx: CanvasRenderingContext2D, S: number, tier: number) {
+  const cx = S / 2;
+  const cy = S / 2;
+  const r = S * (0.3 + tier * 0.02);
+  const hot = tier >= 4; // hauts paliers : teinte froide marquée
+  // halo de froid croissant
+  const halo = ctx.createRadialGradient(cx, cy, 2, cx, cy, r * 1.6);
+  halo.addColorStop(0, `rgba(127,231,240,${0.12 + tier * 0.1})`);
+  halo.addColorStop(1, 'rgba(127,231,240,0)');
+  ctx.fillStyle = halo;
+  ctx.fillRect(0, 0, S, S);
+  // carter
+  ctx.fillStyle = '#23262e';
+  ctx.beginPath();
+  ctx.arc(cx, cy, r + 5, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.strokeStyle = hot ? '#7fe7f0' : '#5d6573';
+  ctx.lineWidth = 3;
+  ctx.beginPath();
+  ctx.arc(cx, cy, r + 3, 0, Math.PI * 2);
+  ctx.stroke();
+  // pales : de plus en plus nombreuses
+  const blades = 2 + tier;
+  ctx.fillStyle = hot ? '#aef0fa' : '#8d99a6';
+  for (let i = 0; i < blades; i++) {
+    const a = (i * Math.PI * 2) / blades;
+    ctx.save();
+    ctx.translate(cx, cy);
+    ctx.rotate(a);
+    ctx.beginPath();
+    ctx.ellipse(r * 0.55, 0, r * 0.42, r * 0.18, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+  }
+  // moyeu
+  ctx.fillStyle = hot ? '#7fe7f0' : '#5d6573';
+  ctx.beginPath();
+  ctx.arc(cx, cy, r * 0.2, 0, Math.PI * 2);
+  ctx.fill();
 }
 
 function paintJet(ctx: CanvasRenderingContext2D, S: number, tier: number) {
@@ -277,8 +319,8 @@ function paintJet(ctx: CanvasRenderingContext2D, S: number, tier: number) {
     ctx.closePath();
     ctx.fill();
   }
-  // ailerons vectoriels (palier 3+)
-  if (tier >= 3) {
+  // ailerons vectoriels (palier 4+)
+  if (tier >= 4) {
     ctx.fillStyle = js.lite;
     for (const side of [-1, 1] as const) {
       ctx.beginPath();
@@ -293,7 +335,7 @@ function paintJet(ctx: CanvasRenderingContext2D, S: number, tier: number) {
   if (js.trim) {
     ctx.strokeStyle = js.trim;
     ctx.lineWidth = 3;
-    if (tier >= 4) {
+    if (tier >= 6) {
       ctx.shadowColor = js.trim;
       ctx.shadowBlur = 8;
     }

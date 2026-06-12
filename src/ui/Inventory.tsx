@@ -5,6 +5,7 @@ import {
   HULL_TIERS,
   JETPACK_TIERS,
   ORE_IDS,
+  RADIATOR_TIERS,
   TANK_TIERS,
   TILES,
   cargoCount,
@@ -42,8 +43,9 @@ export function Inventory() {
     { label: '⚙️ Foreuse', tier: DRILL_TIERS[upgrades.drill], stat: `×${DRILL_TIERS[upgrades.drill].stat}` },
     { label: '⛽ Réservoir', tier: TANK_TIERS[upgrades.tank], stat: `${TANK_TIERS[upgrades.tank].stat} L` },
     { label: '🛡 Coque', tier: HULL_TIERS[upgrades.hull], stat: `${HULL_TIERS[upgrades.hull].stat} PV` },
-    { label: '🚀 Réacteur', tier: JETPACK_TIERS[upgrades.jetpack], stat: `×${JETPACK_TIERS[upgrades.jetpack].stat}` },
+    { label: '🚀 Moteur', tier: JETPACK_TIERS[upgrades.jetpack], stat: `×${JETPACK_TIERS[upgrades.jetpack].stat}` },
     { label: '📦 Soute', tier: CARGO_TIERS[upgrades.cargo], stat: `${CARGO_TIERS[upgrades.cargo].stat} minerais` },
+    { label: '❄️ Radiateur', tier: RADIATOR_TIERS[upgrades.radiator], stat: `−${Math.round(RADIATOR_TIERS[upgrades.radiator].stat * 100)} %` },
   ];
 
   return (

@@ -39,8 +39,8 @@ interface Snap {
   dynamites: number;
   day: number;
   ui: string;
-  coal: number;
   iron: number;
+  bronze: number;
 }
 const snap = (): Promise<Snap> =>
   page.evaluate(() => {
@@ -58,8 +58,8 @@ const snap = (): Promise<Snap> =>
       dynamites: s.dynamites,
       day: s.day,
       ui: s.ui,
-      coal: s.cargo.coal ?? 0,
       iron: s.cargo.iron ?? 0,
+      bronze: s.cargo.bronze ?? 0,
     };
   });
 
@@ -109,11 +109,11 @@ check((await page.locator('.fuel-alert').count()) === 0, 'alerte masquée une fo
 // soute limitée : capacité de base 12, alerte quand elle est pleine
 await page.evaluate(() => {
   const st = (window as any).__store.getState();
-  for (let i = 0; i < 20; i++) st.addCargo('coal');
+  for (let i = 0; i < 20; i++) st.addCargo('iron');
 });
 await page.waitForTimeout(200);
 s = await snap();
-check(s.coal === 12, `capacité de soute plafonnée (${s.coal}/12)`);
+check(s.iron === 10, `capacité de soute plafonnée (${s.iron}/10)`);
 check((await page.locator('.cargo-alert').count()) > 0, 'alerte soute pleine affichée');
 await page.evaluate(() => (window as any).__store.setState({ cargo: {} }));
 await page.waitForTimeout(200);
@@ -143,7 +143,7 @@ await page.screenshot({ path: '/tmp/drill-2-digging.png' });
 
 // minerais pour tester la vente (injection directe, au-delà de la capacité)
 await page.evaluate(() => {
-  (window as any).__store.setState({ cargo: { coal: 140, iron: 10 } });
+  (window as any).__store.setState({ cargo: { iron: 200, bronze: 30 } });
 });
 
 // ── Remonter au jetpack : Haut+Gauche pour glisser sous le plafond
@@ -183,15 +183,15 @@ check(
   'comptoir de vente ouvert avec [E]',
 );
 await page.screenshot({ path: '/tmp/drill-3-shop.png' });
-// vente individuelle : uniquement le fer
-await page.click('.sell-table tr:has-text("Fer") button');
+// vente individuelle : uniquement le bronzium
+await page.click('.sell-table tr:has-text("Bronzium") button');
 s = await snap();
-check(s.money === 300 && s.iron === 0 && s.coal === 140, 'vente individuelle du fer (+300 $)');
+check(s.money === 1800 && s.bronze === 0 && s.iron === 200, 'vente individuelle du bronzium (+1 800 $)');
 // raccourci V : vend tout le reste
 await page.keyboard.press('KeyV');
 await page.waitForTimeout(300);
 s = await snap();
-check(s.money >= 1500 && s.coal === 0, `tout vendu avec [V] (${s.money} $)`);
+check(s.money >= 7500 && s.iron === 0, `tout vendu avec [V] (${s.money} $)`);
 
 // E doit fermer le menu sans le rouvrir aussitôt
 await page.keyboard.press('KeyE');
@@ -248,21 +248,21 @@ if (s.hull < 100) {
 const moneyBefore = (await snap()).money;
 await page.click('.upgrade-row:has-text("Foreuse") button');
 s = await snap();
-check(s.money === moneyBefore - 150, 'achat amélioration foreuse (−150 $)');
-await page.click('.upgrade-row:has-text("Réacteur") button');
+check(s.money === moneyBefore - 750, 'achat amélioration foreuse (−750 $)');
+await page.click('.upgrade-row:has-text("Moteur") button');
 s = await snap();
-check(s.money === moneyBefore - 150 - 200, 'achat amélioration réacteur (−200 $)');
+check(s.money === moneyBefore - 750 - 750, 'achat amélioration moteur (−750 $)');
 // un réservoir/une coque achetés arrivent pleins, sans repasser par la pompe
 await page.click('.upgrade-row:has-text("🛡 Coque") button');
 s = await snap();
 check(s.hull === 170, `coque neuve livrée intacte (${s.hull.toFixed(0)} / 170 PV)`);
 await page.click('.upgrade-row:has-text("Réservoir") button');
 s = await snap();
-check(s.fuel === 170, `réservoir neuf livré plein (${s.fuel.toFixed(0)} / 170 L)`);
+check(s.fuel === 150, `réservoir neuf livré plein (${s.fuel.toFixed(0)} / 150 L)`);
 const moneyBeforeCargo = (await snap()).money;
 await page.click('.upgrade-row:has-text("Soute") button');
 s = await snap();
-check(s.money === moneyBeforeCargo - 140, 'achat amélioration soute (−140 $)');
+check(s.money === moneyBeforeCargo - 750, 'achat amélioration soute (−750 $)');
 await page.click('.upgrade-row:has-text("Téléporteur") button');
 s = await snap();
 check(s.teleporters === 1, 'achat téléporteur');
@@ -280,7 +280,7 @@ await page.keyboard.down('ArrowUp');
 await page.waitForTimeout(900);
 const vyFly: number = await page.evaluate(() => (window as any).__engine.player.vy);
 await page.keyboard.up('ArrowUp');
-check(vyFly < -8, `vol plus rapide après amélioration (${(-vyFly).toFixed(1)} t/s)`);
+check(vyFly < -7.8, `vol plus rapide après amélioration (${(-vyFly).toFixed(1)} t/s)`);
 await page.waitForTimeout(2000); // retombée
 
 // ── Dynamite : largage [X], fuite au jetpack, explosion ───────────────────

@@ -14,6 +14,7 @@ import {
   LAVA_DPS,
   MAX_FALL,
   MAX_FLY,
+  RADIATOR_TIERS,
   MOVE_SPEED,
   SAFE_FALL_SPEED,
   SKY_LIMIT,
@@ -241,9 +242,10 @@ export class Engine {
       }
       const d = this.digging;
       d.progress += dt;
-      // forer dans la lave brûle la coque
+      // forer dans la lave brûle la coque (atténué par le radiateur)
       if (this.world.getTile(d.x, d.y) === 'lava') {
-        hull = Math.max(0, hull - LAVA_DPS * HULL_DMG_FACTOR[store.upgrades.hull] * dt);
+        const cooled = 1 - RADIATOR_TIERS[store.upgrades.radiator].stat;
+        hull = Math.max(0, hull - LAVA_DPS * cooled * HULL_DMG_FACTOR[store.upgrades.hull] * dt);
       }
       // forage vers le bas : la foreuse s'aligne sur la colonne attaquée.
       // Pas d'alignement vertical en forage latéral : remonter la foreuse la
@@ -268,7 +270,8 @@ export class Engine {
       }
     } else {
       this.digging = null;
-      p.vx = ((right ? 1 : 0) - (left ? 1 : 0)) * MOVE_SPEED;
+      // le moteur booste aussi la vitesse de déplacement
+      p.vx = ((right ? 1 : 0) - (left ? 1 : 0)) * MOVE_SPEED * JETPACK_TIERS[store.upgrades.jetpack].stat;
       if (p.vx !== 0) p.facing = p.vx > 0 ? 1 : -1;
     }
 

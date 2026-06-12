@@ -6,13 +6,16 @@ export const SKY_LIMIT = -9; // altitude max de vol (en tuiles)
 export const DAY_CYCLE = 240; // durée d'un cycle jour+nuit complet (secondes)
 
 export type OreId =
-  | "coal"
   | "iron"
+  | "bronze"
   | "silver"
   | "gold"
-  | "ruby"
+  | "platinum"
+  | "einsteinium"
   | "emerald"
-  | "diamond";
+  | "ruby"
+  | "diamond"
+  | "amazonite";
 
 export type TileKind =
   | "empty"
@@ -102,86 +105,119 @@ export const TILES: Record<TileKind, TileDef> = {
     speckle: "#7a2410",
     gem: "#ff7b2d",
   },
-  coal: {
-    name: "Charbon",
-    hardness: 1.4,
-    solid: true,
-    diggable: true,
-    value: 9,
-    base: "#7c5126",
-    speckle: "#624018",
-    gem: "#23232a",
-  },
   iron: {
-    name: "Fer",
-    hardness: 2.4,
+    name: "Ironium",
+    hardness: 1.2,
     solid: true,
     diggable: true,
     value: 30,
     base: "#7c5126",
     speckle: "#624018",
-    gem: "#d28b54",
+    gem: "#9aa4b2",
   },
-  silver: {
-    name: "Argent",
-    hardness: 3,
+  bronze: {
+    name: "Bronzium",
+    hardness: 1.6,
     solid: true,
     diggable: true,
-    value: 75,
+    value: 60,
+    base: "#7c5126",
+    speckle: "#624018",
+    gem: "#cd8a3c",
+  },
+  silver: {
+    name: "Silverium",
+    hardness: 2,
+    solid: true,
+    diggable: true,
+    value: 100,
     base: "#6e6e77",
     speckle: "#55555e",
     gem: "#dde2ec",
   },
   gold: {
-    name: "Or",
-    hardness: 3.6,
+    name: "Goldium",
+    hardness: 2.6,
     solid: true,
     diggable: true,
-    value: 190,
+    value: 250,
     base: "#6e6e77",
     speckle: "#55555e",
     gem: "#f6c945",
   },
-  ruby: {
-    name: "Rubis",
-    hardness: 5,
+  platinum: {
+    name: "Platinium",
+    hardness: 3.4,
     solid: true,
     diggable: true,
-    value: 460,
+    value: 750,
     base: "#54545e",
     speckle: "#3e3e47",
-    gem: "#ef3b58",
+    gem: "#dbe8ee",
+  },
+  einsteinium: {
+    name: "Einsteinium",
+    hardness: 4.2,
+    solid: true,
+    diggable: true,
+    value: 2000,
+    base: "#54545e",
+    speckle: "#3e3e47",
+    gem: "#b86bff",
   },
   emerald: {
     name: "Émeraude",
-    hardness: 6,
+    hardness: 5,
     solid: true,
     diggable: true,
-    value: 1050,
+    value: 5000,
     base: "#54545e",
     speckle: "#3e3e47",
     gem: "#31d178",
   },
-  diamond: {
-    name: "Diamant",
-    hardness: 8,
+  ruby: {
+    name: "Rubis",
+    hardness: 6,
     solid: true,
     diggable: true,
-    value: 2700,
+    value: 20000,
+    base: "#46464f",
+    speckle: "#33333b",
+    gem: "#ef3b58",
+  },
+  diamond: {
+    name: "Diamant",
+    hardness: 7.5,
+    solid: true,
+    diggable: true,
+    value: 100000,
     base: "#46464f",
     speckle: "#33333b",
     gem: "#8deef7",
   },
+  amazonite: {
+    name: "Amazonite",
+    hardness: 9,
+    solid: true,
+    diggable: true,
+    value: 500000,
+    base: "#3c3c45",
+    speckle: "#2b2b33",
+    gem: "#3fd9c2",
+  },
 };
 
 export const ORE_IDS: OreId[] = [
-  "coal",
   "iron",
+  "bronze",
   "silver",
   "gold",
-  "ruby",
+  "platinum",
+  "einsteinium",
   "emerald",
+  "ruby",
   "diamond",
+  "amazonite",
 ];
 
 // Probabilité d'apparition par tuile, modélisée en gaussienne de la profondeur :
@@ -195,13 +231,16 @@ export interface OreBand {
   plateau?: boolean;
 }
 export const ORE_BANDS: OreBand[] = [
-  { ore: "diamond", mu: 800, sigma: 150, p: 0.009, plateau: true },
-  { ore: "emerald", mu: 625, sigma: 140, p: 0.013 },
-  { ore: "ruby", mu: 410, sigma: 95, p: 0.018 },
-  { ore: "gold", mu: 270, sigma: 75, p: 0.026 },
-  { ore: "silver", mu: 160, sigma: 50, p: 0.034 },
-  { ore: "iron", mu: 90, sigma: 40, p: 0.05 },
-  { ore: "coal", mu: 40, sigma: 24, p: 0.07 },
+  { ore: "amazonite", mu: 1400, sigma: 160, p: 0.004, plateau: true },
+  { ore: "diamond", mu: 1050, sigma: 140, p: 0.006 },
+  { ore: "ruby", mu: 850, sigma: 120, p: 0.009 },
+  { ore: "emerald", mu: 700, sigma: 110, p: 0.012 },
+  { ore: "einsteinium", mu: 550, sigma: 100, p: 0.016 },
+  { ore: "platinum", mu: 420, sigma: 85, p: 0.022 },
+  { ore: "gold", mu: 300, sigma: 75, p: 0.03 },
+  { ore: "silver", mu: 200, sigma: 60, p: 0.04 },
+  { ore: "bronze", mu: 110, sigma: 45, p: 0.05 },
+  { ore: "iron", mu: 40, sigma: 28, p: 0.07 },
 ];
 
 // Enveloppe gaussienne d'une bande à la profondeur d.
@@ -233,7 +272,7 @@ export const lavaChance = (depth: number) =>
 export const LAVA_DPS = 90; // dégâts de coque par seconde de forage dans la lave
 
 // ── Dynamite ─────────────────────────────────────────────────────────────────
-export const DYNAMITE_PRICE = 150;
+export const DYNAMITE_PRICE = 750; // les Explosives de Motherload
 export const DYNAMITE_FUSE = 3; // secondes pour s'éloigner avant l'explosion
 export const DYNAMITE_RADIUS = 2.2; // rayon de destruction (tuiles)
 export const DYNAMITE_DMG = 80; // dégâts au centre, décroissants avec la distance
@@ -245,56 +284,79 @@ export interface Tier {
   stat: number;
 }
 
+// Grille de prix Motherload : 750, 2 000, 5 000, 20 000, 100 000, 500 000 $
+
 // stat = multiplicateur de vitesse de forage
 export const DRILL_TIERS: Tier[] = [
   { name: "Standard", price: 0, stat: 1 },
-  { name: "Acier", price: 150, stat: 1.7 },
-  { name: "Carbure", price: 700, stat: 2.6 },
-  { name: "Diamantée", price: 2800, stat: 3.8 },
-  { name: "Plasma", price: 10000, stat: 5.5 },
+  { name: "Silvide", price: 750, stat: 1.3 },
+  { name: "Goldium", price: 2000, stat: 1.8 },
+  { name: "Émeraude", price: 5000, stat: 2.4 },
+  { name: "Rubis", price: 20000, stat: 3.2 },
+  { name: "Diamant", price: 100000, stat: 4.2 },
+  { name: "Amazonite", price: 500000, stat: 5.5 },
 ];
 
 // stat = capacité du réservoir en litres
 export const TANK_TIERS: Tier[] = [
   { name: "100 L", price: 0, stat: 100 },
-  { name: "170 L", price: 120, stat: 170 },
-  { name: "280 L", price: 550, stat: 280 },
-  { name: "450 L", price: 2200, stat: 450 },
-  { name: "750 L", price: 8000, stat: 750 },
+  { name: "150 L", price: 750, stat: 150 },
+  { name: "250 L", price: 2000, stat: 250 },
+  { name: "400 L", price: 5000, stat: 400 },
+  { name: "600 L", price: 20000, stat: 600 },
+  { name: "1000 L", price: 100000, stat: 1000 },
+  { name: "1500 L", price: 500000, stat: 1500 },
 ];
 
-// stat = multiplicateur de vitesse de vol (réacteur dorsal)
+// stat = multiplicateur de vitesse (déplacement et vol) — l'Engine de Motherload
 export const JETPACK_TIERS: Tier[] = [
-  { name: "Standard", price: 0, stat: 1 },
-  { name: "Turbine", price: 200, stat: 1.3 },
-  { name: "Biréacteur", price: 900, stat: 1.6 },
-  { name: "Vectoriel", price: 3600, stat: 2 },
-  { name: "Ionique", price: 13000, stat: 2.5 },
+  { name: "Stock", price: 0, stat: 1 },
+  { name: "V4 1600cc", price: 750, stat: 1.1 },
+  { name: "V4 2.0L Turbo", price: 2000, stat: 1.22 },
+  { name: "V6 3.8L", price: 5000, stat: 1.35 },
+  { name: "V8 5.0L", price: 20000, stat: 1.5 },
+  { name: "V12 6.0L", price: 100000, stat: 1.65 },
+  { name: "V16 Jag", price: 500000, stat: 1.8 },
 ];
 
 // stat = capacité de la soute (nombre de minerais transportables)
 export const CARGO_TIERS: Tier[] = [
-  { name: "12 minerais", price: 0, stat: 12 },
-  { name: "20 minerais", price: 140, stat: 20 },
-  { name: "32 minerais", price: 600, stat: 32 },
-  { name: "50 minerais", price: 2500, stat: 50 },
-  { name: "80 minerais", price: 9000, stat: 80 },
+  { name: "10 minerais", price: 0, stat: 10 },
+  { name: "15 minerais", price: 750, stat: 15 },
+  { name: "25 minerais", price: 2000, stat: 25 },
+  { name: "40 minerais", price: 5000, stat: 40 },
+  { name: "70 minerais", price: 20000, stat: 70 },
+  { name: "110 minerais", price: 100000, stat: 110 },
+  { name: "160 minerais", price: 500000, stat: 160 },
 ];
 
 // stat = points de coque
 export const HULL_TIERS: Tier[] = [
   { name: "Tôle", price: 0, stat: 100 },
-  { name: "Acier", price: 180, stat: 170 },
-  { name: "Titane", price: 800, stat: 280 },
-  { name: "Composite", price: 3200, stat: 450 },
-  { name: "Nanoblindage", price: 12000, stat: 750 },
+  { name: "Ironium", price: 750, stat: 170 },
+  { name: "Bronzium", price: 2000, stat: 300 },
+  { name: "Acier", price: 5000, stat: 500 },
+  { name: "Silverium", price: 20000, stat: 800 },
+  { name: "Einsteinium", price: 100000, stat: 1200 },
+  { name: "Blindage énergétique", price: 500000, stat: 1800 },
 ];
 // réduction des dégâts de chute par palier de coque
-export const HULL_DMG_FACTOR = [1, 0.85, 0.7, 0.55, 0.4];
+export const HULL_DMG_FACTOR = [1, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4];
+
+// stat = fraction des dégâts de lave absorbée (le Radiator de Motherload)
+export const RADIATOR_TIERS: Tier[] = [
+  { name: "Ventilateur", price: 0, stat: 0 },
+  { name: "Double ventilateur", price: 2000, stat: 0.1 },
+  { name: "Turbine simple", price: 5000, stat: 0.25 },
+  { name: "Double turbine", price: 20000, stat: 0.4 },
+  { name: "Refroidisseur Puron", price: 100000, stat: 0.6 },
+  { name: "Tri-turbine fréon", price: 500000, stat: 0.8 },
+];
 
 export const FUEL_PRICE = 1; // $ / litre
 export const REPAIR_PRICE = 1.5; // $ / point de coque
-export const TELEPORTER_PRICE = 300;
+export const TELEPORTER_PRICE = 2000; // le Matter Transmitter de Motherload
+
 
 // ── Physique ─────────────────────────────────────────────────────────────────
 export const GRAVITY = 28; // tuiles/s²

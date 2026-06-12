@@ -23,8 +23,9 @@ bun run preview  # sert le build de production
   c'est le seul moyen de détruire les **rochers**, mais l'explosion blesse
   aussi la foreuse
 
-La boucle : creuser → récolter des minerais (charbon, fer, argent, or, rubis,
-émeraude, diamant — de plus en plus précieux avec la profondeur) → remonter →
+La boucle : creuser → récolter des minerais (de l'ironium à 30 $ jusqu'à
+l'amazonite à 500 000 $, de plus en plus précieux avec la profondeur) →
+remonter →
 passer aux trois bâtiments de surface : le **comptoir de vente** (céder sa
 cargaison), la **station essence** (refaire le plein) et l'**atelier**
 (réparations, améliorations — vitesse de forage, réservoir, coque — et

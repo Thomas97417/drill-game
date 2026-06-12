@@ -1,4 +1,4 @@
-import { BUILDINGS, DAY_CYCLE, TILE, WORLD_W } from './constants';
+import { BUILDINGS, DAY_CYCLE, TILE, TILES, WORLD_W } from './constants';
 import { hash2D } from './rng';
 import { drawTileSprite } from './tileart';
 import { useGameStore } from '../store';
@@ -262,8 +262,8 @@ function drawTiles(
 
       drawTileSprite(ctx, kind, x, y, px, py);
 
-      // les gemmes scintillent pour attirer l'œil
-      if (kind === 'ruby' || kind === 'emerald' || kind === 'diamond') {
+      // les gemmes de valeur scintillent pour attirer l'œil
+      if ((TILES[kind].value ?? 0) >= 5000) {
         const phase = hash2D(x, y, 401) * Math.PI * 2;
         const tw = Math.max(0, Math.sin(e.time * 2.2 + phase));
         if (tw > 0.55) {
@@ -652,31 +652,40 @@ function drawDynamites(e: Engine, ctx: CanvasRenderingContext2D, camPxX: number,
 // ── Foreuse ──────────────────────────────────────────────────────────────────
 
 // Habillage de la caisse par palier de coque : Tôle, Acier, Titane, Composite, Nanoblindage
+// Tôle, Ironium, Bronzium, Acier, Silverium, Einsteinium, Blindage énergétique
 export const HULL_STYLES = [
   { dark: '#8c2f20', mid: '#c0492f', light: '#e2603f', trim: null },
   { dark: '#3e4a5c', mid: '#5a6b82', light: '#84a0c0', trim: null },
+  { dark: '#5e3c1c', mid: '#9c6a32', light: '#cd9a58', trim: null },
   { dark: '#5d6166', mid: '#8d9398', light: '#c9cfd5', trim: null },
-  { dark: '#2c3a26', mid: '#4c623c', light: '#7a9a5c', trim: '#c9a227' },
+  { dark: '#6e7e8e', mid: '#a8b8c8', light: '#e2ecf6', trim: null },
+  { dark: '#2c1c46', mid: '#4a3270', light: '#7a5ab0', trim: '#c9a227' },
   { dark: '#161822', mid: '#2c3046', light: '#4a5070', trim: '#7fe7f0' },
 ] as const;
 
 // Réacteur dorsal par palier — palettes alignées sur HULL_STYLES :
 // Standard, Turbine, Biréacteur (2 tuyères), Vectoriel (ailerons + or), Ionique (flamme cyan)
+// Moteurs : Stock, V4, V4 Turbo, V6, V8, V12, V16 Jag
 export const JET_STYLES = [
   { body: '#3a3e49', lite: '#5d6573', dark: '#23262e', trim: null, nozzles: 1, scale: 1, flame: ['#ff7b2d', '#ffd166', '#fff6da'], glow: 'rgba(255,160,60,0.55)' },
-  { body: '#5a6b82', lite: '#84a0c0', dark: '#2a3340', trim: null, nozzles: 1, scale: 1.08, flame: ['#ff7b2d', '#ffd166', '#fff6da'], glow: 'rgba(255,160,60,0.55)' },
-  { body: '#8d9398', lite: '#c9cfd5', dark: '#5d6166', trim: null, nozzles: 2, scale: 1.16, flame: ['#ff7b2d', '#ffd166', '#fff6da'], glow: 'rgba(255,160,60,0.55)' },
-  { body: '#4c623c', lite: '#7a9a5c', dark: '#2c3a26', trim: '#c9a227', nozzles: 2, scale: 1.24, flame: ['#ff9a3d', '#ffd166', '#fff6da'], glow: 'rgba(255,170,80,0.6)' },
-  { body: '#2c3046', lite: '#4a5070', dark: '#161822', trim: '#7fe7f0', nozzles: 2, scale: 1.32, flame: ['#3fc8de', '#9beef8', '#ffffff'], glow: 'rgba(127,231,240,0.6)' },
+  { body: '#5a6b82', lite: '#84a0c0', dark: '#2a3340', trim: null, nozzles: 1, scale: 1.07, flame: ['#ff7b2d', '#ffd166', '#fff6da'], glow: 'rgba(255,160,60,0.55)' },
+  { body: '#9c6a32', lite: '#cd9a58', dark: '#4a3014', trim: null, nozzles: 1, scale: 1.14, flame: ['#ff7b2d', '#ffd166', '#fff6da'], glow: 'rgba(255,160,60,0.55)' },
+  { body: '#8d9398', lite: '#c9cfd5', dark: '#5d6166', trim: null, nozzles: 2, scale: 1.2, flame: ['#ff7b2d', '#ffd166', '#fff6da'], glow: 'rgba(255,160,60,0.55)' },
+  { body: '#a8b8c8', lite: '#e2ecf6', dark: '#5c6c7c', trim: null, nozzles: 2, scale: 1.27, flame: ['#ff9a3d', '#ffd166', '#fff6da'], glow: 'rgba(255,170,80,0.6)' },
+  { body: '#4a3270', lite: '#7a5ab0', dark: '#241640', trim: '#c9a227', nozzles: 2, scale: 1.34, flame: ['#ff9a3d', '#ffd166', '#fff6da'], glow: 'rgba(255,170,80,0.6)' },
+  { body: '#2c3046', lite: '#4a5070', dark: '#161822', trim: '#7fe7f0', nozzles: 2, scale: 1.4, flame: ['#3fc8de', '#9beef8', '#ffffff'], glow: 'rgba(127,231,240,0.6)' },
 ] as const;
 
 // Trépan par palier : Standard, Acier, Carbure, Diamantée, Plasma
+// Trépans : Standard, Silvide, Goldium, Émeraude, Rubis, Diamant, Amazonite
 export const DRILL_STYLES = [
   { light: '#eef1f6', mid: '#b7bdc9', dark: '#7d8493', tip: '#4d525f', spires: 3, len: 0.46, glow: null },
-  { light: '#f4f8ff', mid: '#c7d2e4', dark: '#8896b0', tip: '#2f4d80', spires: 3, len: 0.52, glow: null },
-  { light: '#efe7d3', mid: '#c0b394', dark: '#857a5e', tip: '#c9862e', spires: 4, len: 0.58, glow: null },
-  { light: '#f2feff', mid: '#aee8f2', dark: '#56aebf', tip: '#e8fdff', spires: 4, len: 0.64, glow: 'rgba(141,238,247,0.45)' },
-  { light: '#e9d4ff', mid: '#b67aff', dark: '#6a3aa8', tip: '#f3e8ff', spires: 5, len: 0.7, glow: 'rgba(194,107,255,0.55)' },
+  { light: '#f4f8ff', mid: '#c7d2e4', dark: '#8896b0', tip: '#2f4d80', spires: 3, len: 0.5, glow: null },
+  { light: '#fff3c0', mid: '#f6c945', dark: '#b8860b', tip: '#8a6508', spires: 4, len: 0.54, glow: null },
+  { light: '#c8f5dc', mid: '#31d178', dark: '#157a44', tip: '#0e5630', spires: 4, len: 0.58, glow: 'rgba(49,209,120,0.4)' },
+  { light: '#ffc4d0', mid: '#ef3b58', dark: '#a31432', tip: '#7a0e24', spires: 5, len: 0.62, glow: 'rgba(239,59,88,0.45)' },
+  { light: '#e8fdff', mid: '#8deef7', dark: '#3aa8b8', tip: '#27828f', spires: 5, len: 0.66, glow: 'rgba(141,238,247,0.5)' },
+  { light: '#d8fff7', mid: '#3fd9c2', dark: '#1b7f70', tip: '#125a4f', spires: 6, len: 0.7, glow: 'rgba(63,217,194,0.6)' },
 ] as const;
 
 function drawPlayer(e: Engine, ctx: CanvasRenderingContext2D, camPxX: number, camPxY: number) {
@@ -780,8 +789,8 @@ function drawPlayer(e: Engine, ctx: CanvasRenderingContext2D, camPxX: number, ca
     ctx.closePath();
     ctx.fill();
   }
-  // palier 3+ : ailerons vectoriels
-  if (up.jetpack >= 3) {
+  // palier 4+ : ailerons vectoriels
+  if (up.jetpack >= 4) {
     ctx.fillStyle = js.lite;
     for (const side of [-1, 1] as const) {
       ctx.beginPath();
@@ -792,12 +801,12 @@ function drawPlayer(e: Engine, ctx: CanvasRenderingContext2D, camPxX: number, ca
       ctx.fill();
     }
   }
-  // liseré : doré au palier 3, énergétique pulsant au palier 4
+  // liseré : doré à l'avant-dernier palier, énergétique pulsant au dernier
   if (js.trim) {
     ctx.save();
     ctx.strokeStyle = js.trim;
     ctx.lineWidth = 2;
-    if (up.jetpack >= 4) {
+    if (up.jetpack >= 6) {
       ctx.shadowColor = js.trim;
       ctx.shadowBlur = 6 + Math.sin(e.time * 6) * 3;
     }
@@ -891,16 +900,16 @@ function drawPlayer(e: Engine, ctx: CanvasRenderingContext2D, camPxX: number, ca
   ctx.beginPath();
   ctx.arc(cabX - w * 0.07, -h * 0.31, w * 0.07, Math.PI * 0.9, Math.PI * 1.7);
   ctx.fill();
-  // palier 3+ : visière blindée au-dessus de la verrière
-  if (up.hull >= 3) {
+  // palier 4+ : visière blindée au-dessus de la verrière
+  if (up.hull >= 4) {
     ctx.strokeStyle = hs.light;
     ctx.lineWidth = 5;
     ctx.beginPath();
     ctx.arc(cabX, -h * 0.26, w * 0.27, Math.PI * 1.08, Math.PI * 1.92);
     ctx.stroke();
   }
-  // palier 4 : liseré énergétique sur la caisse
-  if (up.hull >= 4 && hs.trim) {
+  // dernier palier : liseré énergétique sur la caisse
+  if (up.hull >= 6 && hs.trim) {
     ctx.save();
     ctx.strokeStyle = hs.trim;
     ctx.lineWidth = 2;
@@ -911,7 +920,7 @@ function drawPlayer(e: Engine, ctx: CanvasRenderingContext2D, camPxX: number, ca
     ctx.stroke();
     ctx.restore();
   } else if (hs.trim) {
-    // palier 3 : simple liseré doré
+    // avant-dernier palier : simple liseré doré
     ctx.strokeStyle = hs.trim;
     ctx.lineWidth = 2;
     ctx.beginPath();

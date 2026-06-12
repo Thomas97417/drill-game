@@ -93,13 +93,13 @@ function paintTile(ctx: CanvasRenderingContext2D, kind: TileKind, rng: Rng) {
     case 'lava':
       paintLava(ctx, rng);
       break;
-    case 'coal':
-      paintDirt(ctx, rng);
-      paintCoal(ctx, rng);
-      break;
     case 'iron':
       paintDirt(ctx, rng);
       paintIron(ctx, rng);
+      break;
+    case 'bronze':
+      paintDirt(ctx, rng);
+      paintNuggets(ctx, rng, '#cd8a3c', '#7e4f1e', '#f0c08a');
       break;
     case 'silver':
       paintRock(ctx, rng, ['#565660', '#6f6f79', '#7d7d88', '#8b8b96'], 3);
@@ -109,17 +109,29 @@ function paintTile(ctx: CanvasRenderingContext2D, kind: TileKind, rng: Rng) {
       paintRock(ctx, rng, ['#565660', '#6f6f79', '#7d7d88', '#8b8b96'], 3);
       paintNuggets(ctx, rng, '#f6c945', '#b8860b', '#fff3b0');
       break;
-    case 'ruby':
+    case 'platinum':
       paintRock(ctx, rng, ['#33333c', '#46464f', '#52525c', '#5e5e69'], 4);
-      paintCrystals(ctx, rng, '#ef3b58', '#a31432', '#ff9ab0');
+      paintNuggets(ctx, rng, '#dbe8ee', '#8fa3ad', '#ffffff');
+      break;
+    case 'einsteinium':
+      paintRock(ctx, rng, ['#33333c', '#46464f', '#52525c', '#5e5e69'], 4);
+      paintCrystals(ctx, rng, '#b86bff', '#6a3aa8', '#e4c8ff');
       break;
     case 'emerald':
       paintRock(ctx, rng, ['#33333c', '#46464f', '#52525c', '#5e5e69'], 4);
       paintCrystals(ctx, rng, '#31d178', '#157a44', '#a8f5cd');
       break;
+    case 'ruby':
+      paintRock(ctx, rng, ['#26262e', '#383841', '#44444e', '#50505b'], 4);
+      paintCrystals(ctx, rng, '#ef3b58', '#a31432', '#ff9ab0');
+      break;
     case 'diamond':
       paintRock(ctx, rng, ['#26262e', '#383841', '#44444e', '#50505b'], 4);
       paintCrystals(ctx, rng, '#8deef7', '#3aa8b8', '#e8fdff');
+      break;
+    case 'amazonite':
+      paintRock(ctx, rng, ['#1f1f27', '#2e2e38', '#3a3a45', '#46464f'], 5);
+      paintCrystals(ctx, rng, '#3fd9c2', '#1b7f70', '#bdfff2');
       break;
     default:
       break;
@@ -337,19 +349,12 @@ function chunk(
     }
 }
 
-function paintCoal(ctx: CanvasRenderingContext2D, rng: Rng) {
-  for (let i = 0; i < 3; i++) {
-    const cx = 1 + Math.floor(rng() * (G - 5));
-    const cy = 1 + Math.floor(rng() * (G - 5));
-    chunk(ctx, rng, cx, cy, 3, '#0d0d12', '#1f1f28', '#3c3c4a');
-  }
-}
-
 function paintIron(ctx: CanvasRenderingContext2D, rng: Rng) {
+  // fer gris métal mat, bien distinct du bronzium orangé
   for (let i = 0; i < 3; i++) {
     const cx = 1 + Math.floor(rng() * (G - 5));
     const cy = 1 + Math.floor(rng() * (G - 5));
-    chunk(ctx, rng, cx, cy, 3, '#7a4218', '#c97a3e', '#f0b27e');
+    chunk(ctx, rng, cx, cy, 3, '#454c56', '#7e8794', '#b7c0cc');
   }
 }
 
