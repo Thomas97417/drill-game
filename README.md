@@ -1,6 +1,6 @@
-# ⛏ Foreuse Profonde
+# ⛏ DeepRift
 
-Jeu de forage type *Motherload* dans le navigateur. An 2087 : la Compagnie
+Jeu de forage type _Motherload_ dans le navigateur. An 2087 : la Compagnie
 Minière Trans-Stellaire vous dépose en fusée sur la planète naine XK-712 avec
 une foreuse d'occasion et une dette de **10 000 000 $**. Creusez toujours plus
 profond, récoltez des minerais, améliorez votre machine — et quand votre compte
@@ -33,8 +33,7 @@ cargaison), la **station essence** (refaire le plein) et l'**atelier**
 (réparations, améliorations — vitesse de forage, réservoir, coque — et
 téléporteurs d'urgence).
 
-Attention aux chutes (dégâts de coque), aux **poches de lave** (forer dedans
-brûle la coque — elles se multiplient passé ~120 m) et à la panne sèche : le
+Attention aux chutes (dégâts de coque), aux **poches de lave** et à la panne sèche : le
 sauvetage vous ramène à la surface mais la cargaison est perdue. La partie est sauvegardée
 automatiquement dans le navigateur (localStorage).
 

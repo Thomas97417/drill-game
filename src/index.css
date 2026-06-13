@@ -559,25 +559,6 @@ body {
   will-change: left;
 }
 
-/* flash de confirmation au remplissage complet */
-.hold-btn.hold-confirm {
-  animation: hold-pop 0.34s ease-out;
-}
-
-@keyframes hold-pop {
-  0% {
-    box-shadow: 0 2px 0 #000;
-  }
-  35% {
-    transform: scale(1.05);
-    box-shadow:
-      0 0 0 3px var(--hold-glow),
-      0 0 20px 5px var(--hold-glow);
-  }
-  100% {
-    box-shadow: 0 2px 0 #000;
-  }
-}
 
 /* ── Modales ────────────────────────────────────────────────────────────── */
 

@@ -27,7 +27,6 @@ export function HoldButton({
   drainMs = 450,
 }: HoldButtonProps) {
   const [progress, setProgress] = useState(0);
-  const [confirmed, setConfirmed] = useState(false);
 
   const heldRef = useRef(false); // maintien souris/clavier sur ce bouton
   const extRef = useRef(false); // maintien externe (touche F)
@@ -52,22 +51,30 @@ export function HoldButton({
     function tick(now: number) {
       const dt = last ? now - last : 16;
       last = now;
+      // validé : on remet la barre à zéro d'un coup (pas de vidage progressif)
+      if (firedRef.current) {
+        progRef.current = 0;
+        setProgress(0);
+        raf = 0;
+        last = 0;
+        return;
+      }
       const filling = heldRef.current || extRef.current;
       let p =
         progRef.current + (filling ? dt / fillRef.current : -dt / drainRef.current);
       if (p >= 1) {
-        p = 1;
-        if (!firedRef.current) {
-          firedRef.current = true;
-          setConfirmed(true);
-          confirmRef.current();
-        }
-      } else if (p <= 0) {
-        p = 0;
-        setConfirmed(false);
+        // validation : déclenche, affiche le plein une frame puis snap à 0
+        firedRef.current = true;
+        confirmRef.current();
+        progRef.current = 1;
+        setProgress(1);
+        raf = requestAnimationFrame(tick);
+        return;
       }
+      if (p < 0) p = 0;
       progRef.current = p;
       setProgress(p);
+      // le vidage progressif ne sert qu'à annuler (relâché avant la fin)
       if (filling || p > 0) {
         raf = requestAnimationFrame(tick);
       } else {
@@ -112,7 +119,7 @@ export function HoldButton({
       title={title}
       disabled={disabled}
       data-hold
-      className={`btn hold-btn ${confirmed ? "hold-confirm " : ""}${className}`}
+      className={`btn hold-btn ${className}`}
       style={{ "--hold": progress } as React.CSSProperties}
       onPointerDown={(e) => {
         if (disabled) return;
