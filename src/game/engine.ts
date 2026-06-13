@@ -94,6 +94,9 @@ export interface Rocket {
   state: 'landing' | 'landed' | 'leaving';
   purpose: 'intro' | 'recall';
   timer: number;
+  doorOpen: number; // 0 = porte-rampe fermée, 1 = abaissée au sol
+  roverFrom?: { x: number; y: number }; // centre du rover au début d'un embarquement
+  roverDone?: boolean; // débarquement terminé (anti double-effet)
 }
 
 // texte flottant (nom du minerai récolté…) qui monte et s'estompe
@@ -548,12 +551,12 @@ export class Engine {
 
   private startIntro() {
     this.playerHidden = true;
-    this.rocket = { x: ROCKET_X, yBottom: -20, vy: 0, state: 'landing', purpose: 'intro', timer: 0 };
+    this.rocket = { x: ROCKET_X, yBottom: -20, vy: 0, state: 'landing', purpose: 'intro', timer: 0, doorOpen: 0 };
     useGameStore.setState({ ui: 'cinematic' });
   }
 
   private startRecall() {
-    this.rocket = { x: ROCKET_X, yBottom: -20, vy: 0, state: 'landing', purpose: 'recall', timer: 0 };
+    this.rocket = { x: ROCKET_X, yBottom: -20, vy: 0, state: 'landing', purpose: 'recall', timer: 0, doorOpen: 0 };
     useGameStore.setState({ ui: 'cinematic' });
   }
 
@@ -563,7 +566,13 @@ export class Engine {
     if (!r) return;
     this.rocket = null;
     if (r.purpose === 'intro') {
+      // saut de cinématique : on dépose le rover directement au point de spawn
       this.playerHidden = false;
+      this.player.x = SPAWN_X + (1 - this.player.w) / 2;
+      this.player.y = -this.player.h;
+      this.player.vx = 0;
+      this.player.vy = 0;
+      this.player.grounded = true;
       useGameStore.setState({ ui: 'story' });
     } else {
       this.playerHidden = true;
@@ -584,20 +593,51 @@ export class Engine {
         r.state = 'landed';
         r.timer = 0;
         this.emitBurst(r.x, 0, '#c9b9a0', 16);
-        if (r.purpose === 'intro') {
-          // le mineur débarque
-          this.playerHidden = false;
-          this.emitBurst(this.player.x + this.player.w / 2, this.player.y + this.player.h / 2, '#7fe7f0', 12);
+        if (r.purpose === 'recall') {
+          // on mémorise d'où le rover part pour rejoindre la rampe
+          r.roverFrom = {
+            x: this.player.x + this.player.w / 2,
+            y: this.player.y + this.player.h / 2,
+          };
         }
       }
     } else if (r.state === 'landed') {
       r.timer += dt;
-      if (r.purpose === 'recall' && r.timer > 0.7 && !this.playerHidden) {
-        // le mineur embarque
-        this.playerHidden = true;
-        this.emitBurst(r.x, -0.6, '#7fe7f0', 12);
+      // séquence : ouverture de la porte-rampe → trajet du rover → fermeture
+      const DOOR_T = 0.5; // durée d'ouverture/fermeture de la rampe
+      const RIDE_T = 1.0; // durée du trajet du rover sur la rampe
+      const HOLD = DOOR_T + RIDE_T;
+      const ease = (t: number) => 1 - (1 - t) * (1 - t);
+      r.doorOpen =
+        r.timer < HOLD
+          ? Math.min(1, r.timer / DOOR_T)
+          : Math.max(0, 1 - (r.timer - HOLD) / DOOR_T);
+
+      const door = this.rocketDoor(r);
+      if (r.purpose === 'intro') {
+        // le rover descend la rampe jusqu'au point de spawn
+        if (r.timer > DOOR_T) {
+          this.playerHidden = false;
+          const t = ease(Math.min(1, (r.timer - DOOR_T) / RIDE_T));
+          const spawn = { x: SPAWN_X + 0.5, y: -this.player.h / 2 };
+          this.slideRover(door, spawn, t);
+          this.player.grounded = t >= 1;
+          if (t >= 1 && !r.roverDone) {
+            r.roverDone = true;
+            this.emitBurst(spawn.x, 0, '#c9b9a0', 10);
+          }
+        }
+      } else if (r.roverFrom && r.timer > DOOR_T && !this.playerHidden) {
+        // le rover remonte la rampe puis embarque
+        const t = ease(Math.min(1, (r.timer - DOOR_T) / RIDE_T));
+        this.slideRover(r.roverFrom, door, t);
+        if (t >= 1) {
+          this.playerHidden = true;
+          this.emitBurst(door.x, door.y, '#7fe7f0', 12);
+        }
       }
-      if (r.timer > (r.purpose === 'intro' ? 1.1 : 1.6)) {
+
+      if (r.timer > HOLD + DOOR_T) {
         r.state = 'leaving';
         r.vy = 1.2;
       }
@@ -607,6 +647,22 @@ export class Engine {
       this.emitRocketExhaust(r, dt);
       if (r.yBottom < -24) this.finishRocket();
     }
+  }
+
+  // centre (en tuiles) de l'ouverture de la porte-rampe, côté droit de la fusée
+  private rocketDoor(r: Rocket) {
+    return { x: r.x + 0.4, y: r.yBottom - 1.05 };
+  }
+
+  // place le rover sur la rampe en interpolant entre deux centres (tuiles)
+  private slideRover(from: { x: number; y: number }, to: { x: number; y: number }, t: number) {
+    const p = this.player;
+    p.x = from.x + (to.x - from.x) * t - p.w / 2;
+    p.y = from.y + (to.y - from.y) * t - p.h / 2;
+    p.vx = 0;
+    p.vy = 0;
+    p.flying = false;
+    if (Math.abs(to.x - from.x) > 0.05) p.facing = to.x > from.x ? 1 : -1;
   }
 
   private emitRocketExhaust(r: Rocket, dt: number) {

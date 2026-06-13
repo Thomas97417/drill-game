@@ -828,6 +828,53 @@ function drawRocket(e: Engine, ctx: CanvasRenderingContext2D, camPxX: number, ca
   ctx.beginPath();
   ctx.arc(cx - 2.5, top + h * 0.36, 2.5, 0, Math.PI * 2);
   ctx.fill();
+
+  // porte-rampe de débarquement (côté droit), s'abaisse quand la fusée est posée
+  if (r.yBottom > -1.4 && r.doorOpen > 0.001) {
+    const open = r.doorOpen;
+    // ouverture sombre découpée dans la coque
+    const doorY = top + h * 0.6;
+    const doorH = h * 0.32;
+    ctx.fillStyle = '#1b1e25';
+    ctx.beginPath();
+    ctx.roundRect(cx + w * 0.08, doorY, w * 0.44, doorH, 4);
+    ctx.fill();
+    // lueur intérieure chaude visible par l'écoutille ouverte
+    ctx.fillStyle = `rgba(255,196,120,${0.16 * open})`;
+    ctx.fillRect(cx + w * 0.1, doorY + 2, w * 0.4, doorH - 4);
+
+    // rampe articulée au bas de la coque : pivote de la verticale au sol
+    const hx = cx + w * 0.32;
+    const hy = bottom - h * 0.08;
+    const L = TILE * 1.55;
+    const ang = -Math.PI / 2 + (Math.PI / 2 + 0.14) * open; // -90° fermé → ~8° au sol
+    const dx = Math.cos(ang);
+    const dy = Math.sin(ang);
+    const tx = hx + dx * L;
+    const tyv = hy + dy * L;
+    const nx = -dy * 4.5; // demi-épaisseur, perpendiculaire à la rampe
+    const ny = dx * 4.5;
+    ctx.beginPath();
+    ctx.moveTo(hx + nx, hy + ny);
+    ctx.lineTo(tx + nx, tyv + ny);
+    ctx.lineTo(tx - nx, tyv - ny);
+    ctx.lineTo(hx - nx, hy - ny);
+    ctx.closePath();
+    ctx.fillStyle = '#aeb7c4';
+    ctx.fill();
+    ctx.strokeStyle = '#4b5563';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+    // crans antidérapants le long de la rampe
+    ctx.strokeStyle = 'rgba(60,68,82,0.6)';
+    ctx.lineWidth = 1.5;
+    for (let s = 0.25; s < 1; s += 0.25) {
+      ctx.beginPath();
+      ctx.moveTo(hx + dx * L * s + nx, hy + dy * L * s + ny);
+      ctx.lineTo(hx + dx * L * s - nx, hy + dy * L * s - ny);
+      ctx.stroke();
+    }
+  }
 }
 
 function drawPlayer(e: Engine, ctx: CanvasRenderingContext2D, camPxX: number, camPxY: number) {
