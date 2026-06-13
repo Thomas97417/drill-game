@@ -100,6 +100,7 @@ body {
 /* progression vers les 10 M$ */
 .goal-bar {
   position: relative;
+  width: 100%;
   height: 14px;
   margin-top: 6px;
   background: rgba(0, 0, 0, 0.55);
@@ -700,6 +701,7 @@ body {
 /* bouton d'achat : nom du palier à gauche, prix aligné à droite en doré */
 .buy-btn {
   width: 100%;
+  min-width: 0; /* tient dans sa colonne de grille même avec un nom long */
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -708,7 +710,16 @@ body {
   text-align: left;
 }
 
+/* le libellé (nom du palier) passe à la ligne au lieu de déborder ;
+   le prix garde sa taille à droite */
+.buy-btn > span:not(.buy-price) {
+  min-width: 0;
+  white-space: normal;
+  overflow-wrap: break-word;
+}
+
 .buy-btn .buy-price {
+  flex: none;
   color: #ffd54f;
   font-weight: bold;
 }

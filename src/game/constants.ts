@@ -123,7 +123,7 @@ export const TILES: Record<TileKind, TileDef> = {
   },
   bronze: {
     name: "Bronzium",
-    size: 1,
+    size: 2,
     hardness: 1.6,
     solid: true,
     diggable: true,
@@ -134,7 +134,7 @@ export const TILES: Record<TileKind, TileDef> = {
   },
   silver: {
     name: "Silverium",
-    size: 1,
+    size: 3,
     hardness: 2,
     solid: true,
     diggable: true,
@@ -145,7 +145,7 @@ export const TILES: Record<TileKind, TileDef> = {
   },
   gold: {
     name: "Goldium",
-    size: 2,
+    size: 3,
     hardness: 2.6,
     solid: true,
     diggable: true,
@@ -156,7 +156,7 @@ export const TILES: Record<TileKind, TileDef> = {
   },
   platinum: {
     name: "Platinium",
-    size: 2,
+    size: 4,
     hardness: 3.4,
     solid: true,
     diggable: true,
@@ -167,7 +167,7 @@ export const TILES: Record<TileKind, TileDef> = {
   },
   einsteinium: {
     name: "Einsteinium",
-    size: 3,
+    size: 5,
     hardness: 4.2,
     solid: true,
     diggable: true,
@@ -178,7 +178,7 @@ export const TILES: Record<TileKind, TileDef> = {
   },
   emerald: {
     name: "Émeraude",
-    size: 3,
+    size: 6,
     hardness: 5,
     solid: true,
     diggable: true,
@@ -189,7 +189,7 @@ export const TILES: Record<TileKind, TileDef> = {
   },
   ruby: {
     name: "Rubis",
-    size: 4,
+    size: 7,
     hardness: 6,
     solid: true,
     diggable: true,
@@ -200,7 +200,7 @@ export const TILES: Record<TileKind, TileDef> = {
   },
   diamond: {
     name: "Diamant",
-    size: 5,
+    size: 8,
     hardness: 7.5,
     solid: true,
     diggable: true,
@@ -211,7 +211,7 @@ export const TILES: Record<TileKind, TileDef> = {
   },
   amazonite: {
     name: "Amazonite",
-    size: 6,
+    size: 10,
     hardness: 9,
     solid: true,
     diggable: true,
