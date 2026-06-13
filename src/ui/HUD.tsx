@@ -85,8 +85,13 @@ export function HUD() {
           </div>
         )}
         {money >= MISSION_GOAL && ui === "playing" && (
-          <button className="btn recall-btn" onClick={recallRocket}>
-            🚀 Objectif atteint — Rappeler la fusée
+          <button
+            className="btn recall-btn"
+            onClick={recallRocket}
+            disabled={depth > 0}
+          >
+            Objectif atteint —{" "}
+            {depth > 0 ? "remontez à la surface" : "Rappeler la fusée"}
           </button>
         )}
         {cargoFull && ui === "playing" && (

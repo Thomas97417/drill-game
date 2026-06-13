@@ -14,6 +14,7 @@ import {
 } from "../game/constants";
 import { maxCargoOf, useGameStore, type UpgradeKind } from "../store";
 import { OreIcon } from "./OreIcon";
+import { OreWeight } from "./OreWeight";
 import { UpgradeIcon } from "./UpgradeIcon";
 import { useArrowNav } from "./useArrowNav";
 
@@ -108,7 +109,7 @@ export function Inventory() {
                   <td className="ore-cell">
                     <OreIcon kind={id} size={24} />
                     {TILES[id].name}
-                    <span className="dim ore-size">▣{TILES[id].size}</span>
+                    <OreWeight size={TILES[id].size} />
                   </td>
                   <td className="dim">×{cargo[id]}</td>
                   <td className="right gold">

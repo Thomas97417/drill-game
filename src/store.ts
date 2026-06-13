@@ -249,7 +249,9 @@ export const useGameStore = create<GameStore>((set) => ({
   // objectif atteint : on rappelle la fusée de la Compagnie
   recallRocket: () =>
     set((s) =>
-      s.money >= MISSION_GOAL && s.ui === 'playing' ? { pendingAction: 'recall' } : s,
+      s.money >= MISSION_GOAL && s.ui === 'playing' && s.depth === 0
+        ? { pendingAction: 'recall' }
+        : s,
     ),
 
   beginMission: () => set((s) => (s.ui === 'story' ? { ui: 'playing' } : s)),

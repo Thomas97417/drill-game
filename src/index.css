@@ -355,10 +355,25 @@ body {
   gap: 8px;
 }
 
-/* emplacements de soute occupés par le minerai */
-.ore-size {
-  font-size: 11px;
-  letter-spacing: 0.5px;
+/* emplacements de soute occupés par le minerai : autant de « caisses » que de
+   slots, regroupées dans un petit cadre pour lire le poids d'un coup d'œil */
+.ore-weight {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 3px 5px;
+  border-radius: 5px;
+  background: rgba(0, 0, 0, 0.28);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  vertical-align: middle;
+}
+
+.ore-weight-pip {
+  width: 7px;
+  height: 7px;
+  border-radius: 1.5px;
+  background: linear-gradient(135deg, #d6a85a, #8a6322);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35);
 }
 
 .upgrade-next {

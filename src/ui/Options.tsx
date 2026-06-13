@@ -92,6 +92,21 @@ export function Options() {
         >
           ↺ Nouvelle partie
         </button>
+
+        {import.meta.env.DEV && (
+          <>
+            <h3 className="shop-section">Debug</h3>
+            <button
+              className="btn"
+              onClick={() =>
+                useGameStore.setState((s) => ({ money: s.money + 1_000_000 }))
+              }
+            >
+              💰 +1 000 000 $
+            </button>
+          </>
+        )}
+
         <div className="menu-hint dim">
           ↑↓ / ZQSD naviguer · Entrée ou Espace valider · Échap ou E fermer
         </div>
