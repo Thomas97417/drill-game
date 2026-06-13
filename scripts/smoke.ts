@@ -82,6 +82,15 @@ await page.reload();
 await page.waitForSelector('canvas.game-canvas');
 await page.waitForTimeout(500);
 
+// ── Cinématique d'arrivée + briefing de mission ───────────────────────────
+check((await snap()).ui === 'cinematic', 'fusée de dépose au lancement');
+await page.keyboard.press('KeyE'); // passe la cinématique
+await page.waitForTimeout(400);
+check((await page.locator('.modal.story').count()) > 0, 'briefing de mission affiché');
+await page.keyboard.press('Enter'); // bouton « Commencer » focalisé
+await page.waitForTimeout(300);
+check((await snap()).ui === 'playing', 'mission commencée');
+
 let s = await snap();
 check(s.fuel > 98 && s.money === 0 && s.depth === 0, 'partie fraîche (~100 L, 0 $, 0 m)');
 check(s.day === 1, `la partie commence au jour 1 (jour ${s.day})`);
@@ -325,6 +334,9 @@ await page.keyboard.press('Escape');
 await page.waitForTimeout(200);
 
 // ── Atelier (x ≈ 22) : réparation, améliorations, téléporteur ─────────────
+// rebouche les tunnels creusés : le puits de départ (x ≈ 16) est désormais
+// sur le chemin de l'atelier, on y tomberait en marchant
+await page.evaluate(() => (window as any).__engine.world.dug.clear());
 await walkTo(22);
 await page.keyboard.press('KeyE');
 await page.waitForTimeout(400);
@@ -453,6 +465,26 @@ await page.waitForTimeout(800);
 s = await snap();
 check(s.money === moneySaved, `sauvegarde restaurée (${s.money} $ après rechargement)`);
 await page.screenshot({ path: '/tmp/drill-5-reloaded.png' });
+
+// ── Objectif : 10 M$ → rappel de la fusée → victoire ──────────────────────
+// la coque est restée à 0 après le test de lave : on accepte le rapatriement
+if ((await page.locator('.modal.rescue').count()) > 0) {
+  await page.click('.modal.rescue button');
+  await page.waitForTimeout(500);
+}
+await page.evaluate(() => (window as any).__store.setState({ money: 10_000_000 }));
+await page.waitForTimeout(300);
+check((await page.locator('.recall-btn').count()) > 0, 'bouton « rappeler la fusée » à 10 M$');
+// force : l'animation de pulsation rend le bouton « instable » pour Playwright
+await page.click('.recall-btn', { force: true });
+await page.waitForTimeout(500);
+await page.keyboard.press('KeyE'); // passe la cinématique de départ
+await page.waitForTimeout(500);
+check((await page.locator('.modal.victory').count()) > 0, 'écran de victoire affiché');
+await page.click('button:has-text("Continuer")');
+await page.waitForTimeout(400);
+s = await snap();
+check(s.ui === 'playing' && s.depth === 0, 'retour en jeu après la victoire');
 
 check(errors.length === 0, `aucune erreur console${errors.length ? ` : ${errors.join(' | ')}` : ''}`);
 

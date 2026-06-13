@@ -1,8 +1,10 @@
 # ⛏ Foreuse Profonde
 
-Jeu de forage type *Motherload* dans le navigateur : pilotez une foreuse, creusez
-toujours plus profond, récoltez des minerais et revendez-les à la surface pour
-améliorer votre machine.
+Jeu de forage type *Motherload* dans le navigateur. An 2087 : la Compagnie
+Minière Trans-Stellaire vous dépose en fusée sur la planète naine XK-712 avec
+une foreuse d'occasion et une dette de **10 000 000 $**. Creusez toujours plus
+profond, récoltez des minerais, améliorez votre machine — et quand votre compte
+affiche dix millions, rappelez la fusée pour rentrer chez vous.
 
 ## Lancer
 

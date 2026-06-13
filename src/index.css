@@ -84,6 +84,65 @@ body {
   color: #fff3df;
 }
 
+/* objectif atteint : rappel de la fusée */
+.recall-btn {
+  pointer-events: auto;
+  background: linear-gradient(180deg, #b8860b, #8a6508);
+  border-color: #ffd54f;
+  color: #fff7d6;
+  font-weight: bold;
+  font-size: 15px;
+  padding: 10px 22px;
+  animation: pulse 1.2s infinite;
+  box-shadow: 0 0 18px rgba(255, 213, 79, 0.45);
+}
+
+/* progression vers les 10 M$ */
+.goal-bar {
+  position: relative;
+  height: 14px;
+  margin-top: 6px;
+  background: rgba(0, 0, 0, 0.55);
+  border: 1px solid #000;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.goal-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #b8860b, #ffd54f);
+  transition: width 0.3s;
+}
+
+.goal-text {
+  position: absolute;
+  inset: 0;
+  font-size: 10px;
+  line-height: 13px;
+  text-align: center;
+  color: #fff;
+  text-shadow: 0 1px 2px #000;
+}
+
+.story h2,
+.victory h2 {
+  color: #ffd54f;
+  margin-bottom: 12px;
+}
+
+.victory {
+  border-color: #ffd54f;
+}
+
+.victory-stats {
+  margin: 14px 0;
+}
+
+.story .btn,
+.victory .btn-row {
+  margin-top: 14px;
+}
+
 .cargo-count-full {
   color: #ffb74f;
   font-weight: bold;

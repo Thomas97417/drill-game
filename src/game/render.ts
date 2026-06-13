@@ -16,6 +16,7 @@ export function render(e: Engine) {
   drawDecor(e, ctx, camPxX, camPxY, W, day);
   drawTiles(e, ctx, W, H, camPxX, camPxY);
   drawBuildings(ctx, camPxX, camPxY, day);
+  drawRocket(e, ctx, camPxX, camPxY);
   drawDigOverlay(e, ctx, camPxX, camPxY);
   drawDynamites(e, ctx, camPxX, camPxY);
   drawPlayer(e, ctx, camPxX, camPxY);
@@ -725,7 +726,112 @@ export const DRILL_STYLES = [
   { light: '#d8fff7', mid: '#3fd9c2', dark: '#1b7f70', tip: '#125a4f', spires: 6, len: 0.7, glow: 'rgba(63,217,194,0.6)' },
 ] as const;
 
+// ── Fusée de la Compagnie ────────────────────────────────────────────────────
+
+function drawRocket(e: Engine, ctx: CanvasRenderingContext2D, camPxX: number, camPxY: number) {
+  const r = e.rocket;
+  if (!r) return;
+  const cx = r.x * TILE - camPxX;
+  const bottom = r.yBottom * TILE - camPxY;
+  const w = TILE * 1.4;
+  const h = TILE * 3.2;
+  const top = bottom - h;
+
+  // flamme des moteurs (additive : aucune ombre, même de jour)
+  if (r.state !== 'landed') {
+    const f = 0.7 + Math.sin(e.time * 40) * 0.3;
+    ctx.globalCompositeOperation = 'lighter';
+    const g = ctx.createRadialGradient(cx, bottom + 14, 4, cx, bottom + 14, TILE * 1.7);
+    g.addColorStop(0, 'rgba(255,170,70,0.55)');
+    g.addColorStop(1, 'rgba(255,170,70,0)');
+    ctx.fillStyle = g;
+    ctx.fillRect(cx - TILE * 1.9, bottom - TILE * 0.5, TILE * 3.8, TILE * 3);
+    ctx.globalCompositeOperation = 'source-over';
+    const flames: [number, string][] = [
+      [1.15, '#ff7b2d'],
+      [0.75, '#ffd166'],
+      [0.4, '#fff6da'],
+    ];
+    for (const [scale, color] of flames) {
+      ctx.fillStyle = color;
+      ctx.beginPath();
+      ctx.moveTo(cx - w * 0.2 * scale, bottom + 2);
+      ctx.lineTo(cx + w * 0.2 * scale, bottom + 2);
+      ctx.lineTo(cx, bottom + 2 + TILE * 1.15 * scale * f);
+      ctx.closePath();
+      ctx.fill();
+    }
+  }
+
+  // pieds d'atterrissage près du sol
+  if (r.yBottom > -1.2) {
+    ctx.strokeStyle = '#5d6573';
+    ctx.lineWidth = 4;
+    for (const side of [-1, 1] as const) {
+      ctx.beginPath();
+      ctx.moveTo(cx + (side * w) / 2.4, bottom - h * 0.16);
+      ctx.lineTo(cx + side * (w / 2 + 9), bottom);
+      ctx.stroke();
+    }
+  }
+
+  // tuyère
+  ctx.fillStyle = '#3a3e49';
+  ctx.beginPath();
+  ctx.moveTo(cx - w * 0.24, bottom - h * 0.08);
+  ctx.lineTo(cx + w * 0.24, bottom - h * 0.08);
+  ctx.lineTo(cx + w * 0.32, bottom + 2);
+  ctx.lineTo(cx - w * 0.32, bottom + 2);
+  ctx.closePath();
+  ctx.fill();
+
+  // ailerons
+  ctx.fillStyle = '#c0392b';
+  for (const side of [-1, 1] as const) {
+    ctx.beginPath();
+    ctx.moveTo(cx + (side * w) / 2, bottom - h * 0.36);
+    ctx.lineTo(cx + side * (w / 2 + 13), bottom - h * 0.04);
+    ctx.lineTo(cx + (side * w) / 2, bottom - h * 0.04);
+    ctx.closePath();
+    ctx.fill();
+  }
+
+  // corps
+  const grad = ctx.createLinearGradient(cx - w / 2, 0, cx + w / 2, 0);
+  grad.addColorStop(0, '#cfd6df');
+  grad.addColorStop(0.45, '#f4f7fa');
+  grad.addColorStop(1, '#9aa4b2');
+  ctx.fillStyle = grad;
+  ctx.beginPath();
+  ctx.roundRect(cx - w / 2, top + h * 0.16, w, h * 0.78, 9);
+  ctx.fill();
+  // bande de la Compagnie
+  ctx.fillStyle = '#c0392b';
+  ctx.fillRect(cx - w / 2, top + h * 0.6, w, 8);
+  // nez
+  ctx.fillStyle = '#c0392b';
+  ctx.beginPath();
+  ctx.moveTo(cx - w / 2 + 2, top + h * 0.2);
+  ctx.quadraticCurveTo(cx, top - h * 0.05, cx + w / 2 - 2, top + h * 0.2);
+  ctx.closePath();
+  ctx.fill();
+  // hublot
+  ctx.fillStyle = '#2c333c';
+  ctx.beginPath();
+  ctx.arc(cx, top + h * 0.38, 10, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = '#9fd4f5';
+  ctx.beginPath();
+  ctx.arc(cx, top + h * 0.38, 7, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = 'rgba(255,255,255,0.8)';
+  ctx.beginPath();
+  ctx.arc(cx - 2.5, top + h * 0.36, 2.5, 0, Math.PI * 2);
+  ctx.fill();
+}
+
 function drawPlayer(e: Engine, ctx: CanvasRenderingContext2D, camPxX: number, camPxY: number) {
+  if (e.playerHidden) return;
   const p = e.player;
   const w = p.w * TILE;
   const h = p.h * TILE;

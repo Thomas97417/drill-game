@@ -1,5 +1,6 @@
 import {
   FUEL_PRICE,
+  MISSION_GOAL,
   ORE_IDS,
   REPAIR_PRICE,
   TILES,
@@ -62,6 +63,7 @@ export function HUD() {
   const sellAll = useGameStore((s) => s.sellAll);
   const buyFuel = useGameStore((s) => s.buyFuel);
   const repairHull = useGameStore((s) => s.repairHull);
+  const recallRocket = useGameStore((s) => s.recallRocket);
 
   const maxFuel = maxFuelOf(upgrades);
   const maxHull = maxHullOf(upgrades);
@@ -81,6 +83,11 @@ export function HUD() {
               ? " — remontez faire le plein !"
               : " — passez à la pompe !"}
           </div>
+        )}
+        {money >= MISSION_GOAL && ui === "playing" && (
+          <button className="btn recall-btn" onClick={recallRocket}>
+            🚀 Objectif atteint — Rappeler la fusée
+          </button>
         )}
         {cargoFull && ui === "playing" && (
           <div className="cargo-alert">
@@ -110,6 +117,15 @@ export function HUD() {
         <div className="money-big">{fmt(money)} $</div>
         <div className="depth-big">
           ⛏ {depth} m <span className="depth-max">max {maxDepth} m</span>
+        </div>
+        <div className="goal-bar" title={`Objectif : ${fmt(MISSION_GOAL)} $`}>
+          <div
+            className="goal-fill"
+            style={{ width: `${Math.min(100, (money / MISSION_GOAL) * 100)}%` }}
+          />
+          <span className="goal-text">
+            Objectif {Math.min(100, (money / MISSION_GOAL) * 100).toFixed(1)} %
+          </span>
         </div>
       </div>
 

@@ -16,6 +16,7 @@ import {
   MAX_FALL,
   MAX_FLY,
   RADIATOR_TIERS,
+  ROCKET_X,
   MOVE_SPEED,
   SAFE_FALL_SPEED,
   SKY_LIMIT,
@@ -85,6 +86,16 @@ export interface Flash {
   age: number;
 }
 
+// fusée de la Compagnie : dépose au début de partie, rappel à l'objectif
+export interface Rocket {
+  x: number;
+  yBottom: number; // bas de la fusée, en tuiles (0 = posée au sol)
+  vy: number;
+  state: 'landing' | 'landed' | 'leaving';
+  purpose: 'intro' | 'recall';
+  timer: number;
+}
+
 // texte flottant (nom du minerai récolté…) qui monte et s'estompe
 export interface Floater {
   x: number;
@@ -121,6 +132,8 @@ export class Engine {
   dynamites: Dynamite[] = [];
   flashes: Flash[] = [];
   floaters: Floater[] = [];
+  rocket: Rocket | null = null;
+  playerHidden = false; // à bord de la fusée
   hurtTimer = 0; // animation de dégâts en cours (s restantes)
   camX = 0;
   camY = 0;
@@ -145,6 +158,7 @@ export class Engine {
     this.player = makePlayer(saved?.player);
     this.time = saved?.time ?? 0;
     this.snapCamera();
+    if (!saved) this.startIntro();
   }
 
   start() {
@@ -195,13 +209,18 @@ export class Engine {
     if (store.pendingAction) {
       if (store.pendingAction === 'teleport') this.teleportToSurface();
       else if (store.pendingAction === 'dynamite') this.spawnDynamite();
+      else if (store.pendingAction === 'recall') this.startRecall();
       else this.resetWorld();
       store.clearPending();
     }
 
     this.updateParticles(dt);
+    this.updateRocket(dt);
 
     if (store.ui !== 'playing') {
+      if (store.ui === 'cinematic' && this.rocket && this.input.consume('interact')) {
+        this.finishRocket(); // passe la cinématique
+      }
       this.wasPaused = true;
       this.input.endFrame();
       this.updateCamera(dt);
@@ -454,9 +473,17 @@ export class Engine {
   // ── Caméra ─────────────────────────────────────────────────────────────────
 
   private camTarget(): { x: number; y: number } {
-    const p = this.player;
     const vw = this.viewW / TILE;
     const vh = this.viewH / TILE;
+    if (this.rocket) {
+      const x =
+        vw >= WORLD_W
+          ? (WORLD_W - vw) / 2
+          : Math.max(0, Math.min(WORLD_W - vw, this.rocket.x - vw / 2));
+      const y = Math.max(SKY_LIMIT - 1, Math.min(this.rocket.yBottom, 0) + 2.5 - vh / 2);
+      return { x, y };
+    }
+    const p = this.player;
     let x: number;
     if (vw >= WORLD_W) x = (WORLD_W - vw) / 2;
     else x = Math.max(0, Math.min(WORLD_W - vw, p.x + p.w / 2 - vw / 2));
@@ -480,6 +507,7 @@ export class Engine {
   // ── Actions ────────────────────────────────────────────────────────────────
 
   private teleportToSurface() {
+    this.playerHidden = false;
     const p = this.player;
     this.emitBurst(p.x + p.w / 2, p.y + p.h / 2, '#7fe7f0', 16);
     // colonne d'arrivée la plus proche du spawn dont le sol n'a pas été creusé
@@ -511,7 +539,89 @@ export class Engine {
     this.dynamites = [];
     this.flashes = [];
     this.floaters = [];
+    this.rocket = null;
     this.snapCamera();
+    this.startIntro();
+  }
+
+  // ── Fusée de la Compagnie ──────────────────────────────────────────────────
+
+  private startIntro() {
+    this.playerHidden = true;
+    this.rocket = { x: ROCKET_X, yBottom: -20, vy: 0, state: 'landing', purpose: 'intro', timer: 0 };
+    useGameStore.setState({ ui: 'cinematic' });
+  }
+
+  private startRecall() {
+    this.rocket = { x: ROCKET_X, yBottom: -20, vy: 0, state: 'landing', purpose: 'recall', timer: 0 };
+    useGameStore.setState({ ui: 'cinematic' });
+  }
+
+  // fin (ou saut) de cinématique : applique directement l'état final
+  private finishRocket() {
+    const r = this.rocket;
+    if (!r) return;
+    this.rocket = null;
+    if (r.purpose === 'intro') {
+      this.playerHidden = false;
+      useGameStore.setState({ ui: 'story' });
+    } else {
+      this.playerHidden = true;
+      useGameStore.setState({ ui: 'victory' });
+    }
+  }
+
+  private updateRocket(dt: number) {
+    const r = this.rocket;
+    if (!r) return;
+    if (r.state === 'landing') {
+      // descente freinée à l'approche du sol
+      const speed = Math.min(8, 1.4 - r.yBottom * 0.45);
+      r.yBottom += speed * dt;
+      this.emitRocketExhaust(r, dt);
+      if (r.yBottom >= 0) {
+        r.yBottom = 0;
+        r.state = 'landed';
+        r.timer = 0;
+        this.emitBurst(r.x, 0, '#c9b9a0', 16);
+        if (r.purpose === 'intro') {
+          // le mineur débarque
+          this.playerHidden = false;
+          this.emitBurst(this.player.x + this.player.w / 2, this.player.y + this.player.h / 2, '#7fe7f0', 12);
+        }
+      }
+    } else if (r.state === 'landed') {
+      r.timer += dt;
+      if (r.purpose === 'recall' && r.timer > 0.7 && !this.playerHidden) {
+        // le mineur embarque
+        this.playerHidden = true;
+        this.emitBurst(r.x, -0.6, '#7fe7f0', 12);
+      }
+      if (r.timer > (r.purpose === 'intro' ? 1.1 : 1.6)) {
+        r.state = 'leaving';
+        r.vy = 1.2;
+      }
+    } else {
+      r.vy += 10 * dt;
+      r.yBottom -= r.vy * dt;
+      this.emitRocketExhaust(r, dt);
+      if (r.yBottom < -24) this.finishRocket();
+    }
+  }
+
+  private emitRocketExhaust(r: Rocket, dt: number) {
+    if (Math.random() > dt * 40) return;
+    this.particles.push({
+      x: r.x + (Math.random() - 0.5) * 0.7,
+      y: r.yBottom + 0.1,
+      vx: (Math.random() - 0.5) * 2.5,
+      vy: 1 + Math.random() * 2,
+      life: 0.8,
+      maxLife: 0.8,
+      color: Math.random() < 0.4 ? 'rgba(255,160,60,0.8)' : 'rgba(160,160,170,0.7)',
+      size: 5 + Math.random() * 4,
+      g: -0.04,
+    });
   }
 
   // ── Dynamite ───────────────────────────────────────────────────────────────
@@ -563,6 +673,10 @@ export class Engine {
 
   saveGame() {
     const s = useGameStore.getState();
+    // pas de sauvegarde avant le début effectif de la mission : le démontage
+    // StrictMode (ou un rechargement pendant la cinématique d'arrivée)
+    // écrirait sinon une partie « déjà commencée » et sauterait l'intro
+    if (s.ui === 'cinematic' || s.ui === 'story') return;
     saveNow({
       seed: this.world.seed,
       dug: [...this.world.dug],

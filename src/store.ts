@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import {
   CARGO_TIERS,
+  MISSION_GOAL,
   DRILL_TIERS,
   DYNAMITE_PRICE,
   FUEL_PRICE,
@@ -19,7 +20,15 @@ import {
 } from './game/constants';
 import { loadSave } from './game/save';
 
-export type UiMode = 'playing' | 'rescue' | 'inventory' | 'options' | BuildingId;
+export type UiMode =
+  | 'playing'
+  | 'rescue'
+  | 'inventory'
+  | 'options'
+  | 'cinematic'
+  | 'story'
+  | 'victory'
+  | BuildingId;
 export type KeyboardLayout = 'azerty' | 'qwerty';
 export const isBuilding = (ui: UiMode): ui is BuildingId =>
   ui === 'sell' || ui === 'fuel' || ui === 'garage';
@@ -50,7 +59,7 @@ interface GameStore {
   ui: UiMode;
   rescueReason: 'fuel' | 'hull';
   // ordre à consommer par le moteur de jeu
-  pendingAction: 'teleport' | 'newgame' | 'dynamite' | null;
+  pendingAction: 'teleport' | 'newgame' | 'dynamite' | 'recall' | null;
 
   addCargo: (ore: OreId) => void;
   sellAll: () => void;
@@ -67,6 +76,9 @@ interface GameStore {
   toggleInventory: () => void;
   toggleOptions: () => void;
   setLayout: (layout: KeyboardLayout) => void;
+  recallRocket: () => void;
+  beginMission: () => void;
+  continueMining: () => void;
   triggerRescue: (reason: 'fuel' | 'hull') => void;
   doRescue: () => void;
   newGame: () => void;
@@ -233,6 +245,19 @@ export const useGameStore = create<GameStore>((set) => ({
     ),
 
   setLayout: (layout) => set({ layout }),
+
+  // objectif atteint : on rappelle la fusée de la Compagnie
+  recallRocket: () =>
+    set((s) =>
+      s.money >= MISSION_GOAL && s.ui === 'playing' ? { pendingAction: 'recall' } : s,
+    ),
+
+  beginMission: () => set((s) => (s.ui === 'story' ? { ui: 'playing' } : s)),
+
+  continueMining: () =>
+    set((s) =>
+      s.ui === 'victory' ? { ui: 'playing', pendingAction: 'teleport' } : s,
+    ),
 
   triggerRescue: (reason) => set({ ui: 'rescue', rescueReason: reason }),
 
