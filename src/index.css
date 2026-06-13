@@ -500,6 +500,85 @@ body {
   margin: 10px 0;
 }
 
+/* ── Bouton « maintenir pour valider » ────────────────────────────────────
+   Le remplissage (::before) est peint au-dessus du fond du bouton mais sous
+   son texte grâce au z-index négatif dans un contexte d'empilement isolé. */
+.hold-btn {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+  touch-action: none;
+}
+
+/* couleur de remplissage selon le bouton : doré par défaut (boutons sombres),
+   redéfinie en vert sur les boutons primaires pour éviter le doré-sur-vert */
+.hold-btn {
+  --hold-fill: linear-gradient(
+    90deg,
+    rgba(255, 213, 79, 0.4),
+    rgba(255, 196, 87, 0.7)
+  );
+  --hold-edge: rgba(255, 248, 220, 0.95);
+  --hold-glow: rgba(255, 213, 79, 0.85);
+}
+
+.btn-primary.hold-btn {
+  --hold-fill: linear-gradient(
+    90deg,
+    rgba(151, 240, 178, 0.45),
+    rgba(108, 224, 148, 0.78)
+  );
+  --hold-edge: rgba(240, 255, 244, 0.95);
+  --hold-glow: rgba(120, 240, 160, 0.85);
+}
+
+.hold-btn::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  transform-origin: left center;
+  transform: scaleX(var(--hold, 0));
+  background: var(--hold-fill);
+  will-change: transform;
+}
+
+/* ligne brillante en tête de remplissage */
+.hold-btn::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: calc(var(--hold, 0) * 100%);
+  width: 3px;
+  margin-left: -2px;
+  z-index: -1;
+  background: var(--hold-edge);
+  box-shadow: 0 0 10px 2px var(--hold-glow);
+  opacity: var(--hold, 0);
+  will-change: left;
+}
+
+/* flash de confirmation au remplissage complet */
+.hold-btn.hold-confirm {
+  animation: hold-pop 0.34s ease-out;
+}
+
+@keyframes hold-pop {
+  0% {
+    box-shadow: 0 2px 0 #000;
+  }
+  35% {
+    transform: scale(1.05);
+    box-shadow:
+      0 0 0 3px var(--hold-glow),
+      0 0 20px 5px var(--hold-glow);
+  }
+  100% {
+    box-shadow: 0 2px 0 #000;
+  }
+}
+
 /* ── Modales ────────────────────────────────────────────────────────────── */
 
 .overlay {

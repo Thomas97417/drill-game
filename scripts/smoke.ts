@@ -74,6 +74,24 @@ async function holdUntil(p: Page, key: string, cond: (s: Snap) => boolean, timeo
   await p.keyboard.up(key);
 }
 
+// Boutons « maintenir pour valider » du shop : il faut garder le clic / la
+// touche le temps que la barre se remplisse (≈ 700 ms) avant le déclenchement.
+const HOLD_MS = 1000;
+async function holdPress(key: string, ms = HOLD_MS) {
+  await page.keyboard.down(key);
+  await page.waitForTimeout(ms);
+  await page.keyboard.up(key);
+  await page.waitForTimeout(150);
+}
+// focalise le bouton (le fait défiler dans la vue) puis maintient Entrée :
+// plus fiable que des coordonnées souris quand le panneau défile
+async function holdClick(selector: string, ms = HOLD_MS) {
+  const loc = page.locator(selector).first();
+  await loc.scrollIntoViewIfNeeded();
+  await loc.focus();
+  await holdPress('Enter', ms);
+}
+
 // ── Partie fraîche ────────────────────────────────────────────────────────
 await page.goto(URL);
 await page.waitForSelector('canvas.game-canvas');
@@ -128,7 +146,7 @@ await page.evaluate(() => (window as any).__store.setState({ cargo: {} }));
 await page.waitForTimeout(200);
 check((await page.locator('.cargo-alert').count()) === 0, 'alerte soute masquée une fois vidée');
 
-// les minerais précieux occupent plus de stockage (Goldium = 2)
+// les minerais précieux occupent plus de stockage (Goldium = 3)
 await page.evaluate(() => {
   const st = (window as any).__store.getState();
   for (let i = 0; i < 8; i++) st.addCargo('gold');
@@ -136,7 +154,7 @@ await page.evaluate(() => {
 const goldCount = await page.evaluate(
   () => (window as any).__store.getState().cargo.gold ?? 0,
 );
-check(goldCount === 5, `taille de stockage par valeur (${goldCount} Goldium = 10 stockage)`);
+check(goldCount === 3, `taille de stockage par valeur (${goldCount} Goldium = 9 stockage)`);
 await page.evaluate(() => (window as any).__store.setState({ cargo: {} }));
 
 // le canvas garde sa taille CSS malgré le devicePixelRatio de 2
@@ -244,13 +262,12 @@ check(movedIdx2 >= 0 && movedIdx2 !== movedIdx, 'ZQSD : focus déplacé avec S')
 // retour au point de départ pour la suite du test
 await page.keyboard.press('KeyW');
 await page.keyboard.press('KeyW');
-// vente individuelle : uniquement le bronzium
-await page.click('.sell-table tr:has-text("Bronzium") button');
+// vente individuelle : uniquement le bronzium (maintien du clic)
+await holdClick('.sell-table tr:has-text("Bronzium") button');
 s = await snap();
 check(s.money === 1800 && s.bronze === 0 && s.iron === 200, 'vente individuelle du bronzium (+1 800 $)');
-// action rapide F : vend tout le reste
-await page.keyboard.press('KeyF');
-await page.waitForTimeout(300);
+// action rapide F : vend tout le reste (maintien de la touche)
+await holdPress('KeyF');
 s = await snap();
 check(s.money >= 7500 && s.iron === 0, `tout vendu avec [F] (${s.money} $)`);
 
@@ -309,25 +326,24 @@ check(
   (await page.locator('.modal.shop:has-text("Station essence")').count()) > 0,
   'station essence ouverte avec [E]',
 );
-// Entrée valide le bouton focalisé (+10 L, premier bouton du panneau)
+// on vide le réservoir pour que les achats partiels soient visibles
+await page.evaluate(() => (window as any).__store.setState({ fuel: 40 }));
+// Entrée (maintenue) valide le bouton focalisé (+10 L, premier bouton du panneau)
 const fuelBefore = (await snap()).fuel;
-await page.keyboard.press('Enter');
-await page.waitForTimeout(250);
+await holdPress('Enter');
 s = await snap();
 check(s.fuel > fuelBefore, `achat validé avec [Entrée] (+${(s.fuel - fuelBefore).toFixed(0)} L)`);
-// Espace valide aussi (on revide un peu le réservoir, le +10 L a pu le remplir)
+// Espace valide aussi
 await page.evaluate(() => (window as any).__store.setState({ fuel: 80 }));
 // reprend le focus (perdu quand le bouton s'est grisé) : Fermer, puis +10 L
 await page.keyboard.press('ArrowDown');
 await page.keyboard.press('ArrowDown');
 await page.waitForTimeout(150);
 const fuelBefore2 = (await snap()).fuel;
-await page.keyboard.press('Space');
-await page.waitForTimeout(250);
+await holdPress('Space');
 s = await snap();
 check(s.fuel > fuelBefore2, `achat validé avec [Espace] (+${(s.fuel - fuelBefore2).toFixed(0)} L)`);
-await page.keyboard.press('KeyF');
-await page.waitForTimeout(300);
+await holdPress('KeyF');
 s = await snap();
 check(s.fuel >= 99.5, `plein d'essence avec [F] (${s.fuel.toFixed(1)} L)`);
 await page.keyboard.press('Escape');
@@ -345,32 +361,32 @@ check(
   'atelier ouvert avec [E]',
 );
 if (s.hull < 100) {
-  await page.click('[data-kind="repair"] .buy-btn');
+  await page.click('[data-kind="repair"] .buy-btn'); // réparation = clic instantané
   s = await snap();
   check(s.hull >= 99.5, `réparation de la coque (${s.hull.toFixed(0)} PV)`);
 }
 const moneyBefore = (await snap()).money;
-await page.click('[data-kind="drill"] .buy-btn');
+await holdClick('[data-kind="drill"] .buy-btn');
 s = await snap();
 check(s.money === moneyBefore - 750, 'achat amélioration foreuse (−750 $)');
-await page.click('[data-kind="jetpack"] .buy-btn');
+await holdClick('[data-kind="jetpack"] .buy-btn');
 s = await snap();
 check(s.money === moneyBefore - 750 - 750, 'achat amélioration moteur (−750 $)');
 // un réservoir/une coque achetés arrivent pleins, sans repasser par la pompe
-await page.click('[data-kind="hull"] .buy-btn');
+await holdClick('[data-kind="hull"] .buy-btn');
 s = await snap();
 check(s.hull === 170, `coque neuve livrée intacte (${s.hull.toFixed(0)} / 170 PV)`);
-await page.click('[data-kind="tank"] .buy-btn');
+await holdClick('[data-kind="tank"] .buy-btn');
 s = await snap();
 check(s.fuel === 150, `réservoir neuf livré plein (${s.fuel.toFixed(0)} / 150 L)`);
 const moneyBeforeCargo = (await snap()).money;
-await page.click('[data-kind="cargo"] .buy-btn');
+await holdClick('[data-kind="cargo"] .buy-btn');
 s = await snap();
 check(s.money === moneyBeforeCargo - 750, 'achat amélioration soute (−750 $)');
-await page.click('[data-kind="teleporter"] .buy-btn');
+await page.click('[data-kind="teleporter"] .buy-btn'); // consommable = clic instantané
 s = await snap();
 check(s.teleporters === 1, 'achat téléporteur');
-await page.click('[data-kind="dynamite"] .buy-btn');
+await page.click('[data-kind="dynamite"] .buy-btn'); // consommable = clic instantané
 s = await snap();
 check(s.dynamites === 1, 'achat dynamite');
 await page.screenshot({ path: '/tmp/drill-4-shop-upgrades.png' });

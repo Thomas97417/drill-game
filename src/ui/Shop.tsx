@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import {
   CARGO_TIERS,
   DRILL_TIERS,
@@ -24,6 +24,7 @@ import {
   useGameStore,
   type UpgradeKind,
 } from "../store";
+import { HoldButton } from "./HoldButton";
 import { OreIcon } from "./OreIcon";
 import { OreWeight } from "./OreWeight";
 import { UpgradeIcon } from "./UpgradeIcon";
@@ -100,20 +101,35 @@ export function Shop() {
   const open = isBuilding(ui);
   useArrowNav(open);
 
+  // touche F : maintien de l'action rapide vente/plein (alimente le bouton à
+  // remplissage). À l'atelier, la réparation reste une action instantanée.
+  const [fHeld, setFHeld] = useState(false);
+
+  const close = () => {
+    setFHeld(false);
+    closeShop();
+  };
+
   useEffect(() => {
     if (!open) return;
-    const onKey = (e: KeyboardEvent) => {
-      if (e.code === "Escape" || e.code === "KeyE") closeShop();
-      // action rapide unifiée
-      if (e.code === "KeyF") {
-        if (ui === "sell") sellAll();
-        else if (ui === "fuel") buyFuel(Infinity);
-        else if (ui === "garage") repairHull();
+    const down = (e: KeyboardEvent) => {
+      if (e.code === "Escape" || e.code === "KeyE") close();
+      if (e.code === "KeyF" && !e.repeat) {
+        if (ui === "garage") repairHull();
+        else setFHeld(true);
       }
     };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [open, ui, closeShop, sellAll, buyFuel, repairHull]);
+    const up = (e: KeyboardEvent) => {
+      if (e.code === "KeyF") setFHeld(false);
+    };
+    window.addEventListener("keydown", down);
+    window.addEventListener("keyup", up);
+    return () => {
+      window.removeEventListener("keydown", down);
+      window.removeEventListener("keyup", up);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, ui, closeShop, repairHull]);
 
   if (!open) return null;
 
@@ -130,7 +146,7 @@ export function Shop() {
         <div className="modal-header">
           <h2>{TITLES[ui]}</h2>
           <div className="money">{fmt(money)} $</div>
-          <button className="btn btn-small" onClick={closeShop}>
+          <button className="btn btn-small" onClick={close}>
             ✕ Fermer
           </button>
         </div>
@@ -163,24 +179,25 @@ export function Shop() {
                           {fmt((cargo[id] ?? 0) * (TILES[id].value ?? 0))} $
                         </td>
                         <td className="right">
-                          <button
-                            className="btn btn-small"
-                            onClick={() => sellOre(id)}
+                          <HoldButton
+                            className="btn-small"
+                            onConfirm={() => sellOre(id)}
                           >
                             Vendre
-                          </button>
+                          </HoldButton>
                         </td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
-                <button
-                  className="btn btn-primary buy-btn sell-all"
-                  onClick={sellAll}
+                <HoldButton
+                  className="btn-primary buy-btn sell-all"
+                  active={fHeld}
+                  onConfirm={sellAll}
                 >
                   <span>Tout vendre [F]</span>
                   <span className="buy-price">{fmt(total)} $</span>
-                </button>
+                </HoldButton>
               </>
             )}
           </div>
@@ -204,28 +221,29 @@ export function Shop() {
             </p>
             <div className="fuel-options">
               {[10, 25, 50].map((l) => (
-                <button
+                <HoldButton
                   key={l}
-                  className="btn buy-btn"
+                  className="buy-btn"
                   disabled={missingFuel <= 0 || money < 1}
-                  onClick={() => buyFuel(l)}
+                  onConfirm={() => buyFuel(l)}
                 >
                   <span>+{l} L</span>
                   <span className="buy-price">
                     {fmt(Math.min(l, missingFuel) * FUEL_PRICE)} $
                   </span>
-                </button>
+                </HoldButton>
               ))}
-              <button
-                className="btn btn-primary buy-btn"
+              <HoldButton
+                className="btn-primary buy-btn"
                 disabled={missingFuel <= 0 || money < 1}
-                onClick={() => buyFuel(Infinity)}
+                active={fHeld}
+                onConfirm={() => buyFuel(Infinity)}
               >
                 <span>Plein [F]</span>
                 <span className="buy-price">
                   {fmt(missingFuel * FUEL_PRICE)} $
                 </span>
-              </button>
+              </HoldButton>
             </div>
           </div>
         )}
@@ -269,16 +287,16 @@ export function Shop() {
                     {next && <UpgradeIcon kind={kind} tier={lvl + 1} />}
                   </div>
                   {next ? (
-                    <button
-                      className="btn buy-btn"
+                    <HoldButton
+                      className="buy-btn"
                       disabled={money < next.price}
-                      onClick={() => buyUpgrade(kind)}
+                      onConfirm={() => buyUpgrade(kind)}
                     >
                       <span>
                         {next.name} ({statLabel(next.stat)})
                       </span>
                       <span className="buy-price">{fmt(next.price)} $</span>
-                    </button>
+                    </HoldButton>
                   ) : (
                     <span className="tier-max">★ Niveau max</span>
                   )}
@@ -323,7 +341,8 @@ export function Shop() {
           </div>
         )}
         <div className="menu-hint dim">
-          ↑↓ / ZQSD naviguer · Entrée ou Espace valider · Échap ou E fermer
+          ↑↓ / ZQSD naviguer · maintenir Entrée/Espace pour valider · Échap ou E
+          fermer
         </div>
       </div>
     </div>

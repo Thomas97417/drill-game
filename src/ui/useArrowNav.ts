@@ -27,7 +27,8 @@ export function useArrowNav(open: boolean) {
         const a = document.activeElement as HTMLButtonElement | null;
         if (a?.tagName === 'BUTTON' && a.closest('.modal')) {
           e.preventDefault();
-          a.click();
+          // les boutons « maintenir pour valider » gèrent eux-mêmes Espace
+          if (!a.dataset.hold) a.click();
         }
         return;
       }
