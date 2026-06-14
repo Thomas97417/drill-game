@@ -10,6 +10,7 @@ export const SKY_LIMIT = -9; // altitude max de vol (en tuiles)
 export const DAY_CYCLE = 240; // durée d'un cycle jour+nuit complet (secondes)
 
 export type OreId =
+  // XK-712 (lave)
   | "iron"
   | "bronze"
   | "silver"
@@ -19,7 +20,14 @@ export type OreId =
   | "emerald"
   | "ruby"
   | "diamond"
-  | "amazonite";
+  | "amazonite"
+  // Planète gelée (frost)
+  | "glacium"
+  | "cobaltium"
+  | "cryolite"
+  | "borealite"
+  | "cryocrystal"
+  | "aurorium";
 
 export type TileKind =
   | "empty"
@@ -30,6 +38,12 @@ export type TileKind =
   | "foundation"
   | "boulder"
   | "lava"
+  // tuiles structurelles de la planète gelée
+  | "snow"
+  | "ice"
+  | "hardice"
+  | "iceboulder"
+  | "cold"
   | OreId;
 
 export interface TileDef {
@@ -109,6 +123,48 @@ export const TILES: Record<TileKind, TileDef> = {
     base: "#3a1408",
     speckle: "#7a2410",
     gem: "#ff7b2d",
+  },
+  // ── Tuiles structurelles de la planète gelée ──
+  snow: {
+    name: "Neige",
+    hardness: 1,
+    solid: true,
+    diggable: true,
+    base: "#dfe9f2",
+    speckle: "#c2d2e2",
+  },
+  ice: {
+    name: "Glace",
+    hardness: 2.4,
+    solid: true,
+    diggable: true,
+    base: "#9fb6c8",
+    speckle: "#7e96aa",
+  },
+  hardice: {
+    name: "Glace compacte",
+    hardness: 4.6,
+    solid: true,
+    diggable: true,
+    base: "#5f7385",
+    speckle: "#46586a",
+  },
+  iceboulder: {
+    name: "Rocher de glace",
+    hardness: 0,
+    solid: true,
+    diggable: false,
+    base: "#6e8290",
+    speckle: "#52636f",
+  },
+  cold: {
+    name: "Poche de froid",
+    hardness: 2,
+    solid: true,
+    diggable: true,
+    base: "#0e2e3a",
+    speckle: "#1a4a5e",
+    gem: "#bfe6f5",
   },
   iron: {
     name: "Ironium",
@@ -220,8 +276,78 @@ export const TILES: Record<TileKind, TileDef> = {
     speckle: "#2b2b33",
     gem: "#34f1c5",
   },
+  // ── Minerais de la planète gelée ──
+  glacium: {
+    name: "Glacium",
+    size: 2,
+    hardness: 1.3,
+    solid: true,
+    diggable: true,
+    value: 50,
+    base: "#aebfce",
+    speckle: "#8da0b4",
+    gem: "#c3d2e0",
+  },
+  cobaltium: {
+    name: "Cobaltium",
+    size: 2,
+    hardness: 1.8,
+    solid: true,
+    diggable: true,
+    value: 150,
+    base: "#9fb6c8",
+    speckle: "#7e96aa",
+    gem: "#4a78c8",
+  },
+  cryolite: {
+    name: "Cryolite",
+    size: 3,
+    hardness: 2.6,
+    solid: true,
+    diggable: true,
+    value: 500,
+    base: "#9fb6c8",
+    speckle: "#7e96aa",
+    gem: "#7fe0e8",
+  },
+  borealite: {
+    name: "Boréalite",
+    size: 5,
+    hardness: 4,
+    solid: true,
+    diggable: true,
+    value: 4000,
+    base: "#5f7385",
+    speckle: "#46586a",
+    gem: "#5fe39a",
+  },
+  cryocrystal: {
+    name: "Cryocristal",
+    size: 7,
+    hardness: 6,
+    solid: true,
+    diggable: true,
+    value: 40000,
+    base: "#46586a",
+    speckle: "#33414f",
+    gem: "#c8f0ff",
+  },
+  aurorium: {
+    name: "Aurorium",
+    size: 10,
+    hardness: 9,
+    solid: true,
+    diggable: true,
+    value: 2500000,
+    base: "#2e3a46",
+    speckle: "#1f2832",
+    gem: "#5cffd0",
+  },
 };
 
+// Surensemble de tous les minerais (toutes planètes) — sert à l'itération de la
+// soute (cargoValue/cargoLoad) et à la cuisson de l'atlas. Les minerais absents
+// de la planète courante valent simplement 0 en soute.
 export const ORE_IDS: OreId[] = [
   "iron",
   "bronze",
@@ -233,6 +359,12 @@ export const ORE_IDS: OreId[] = [
   "ruby",
   "diamond",
   "amazonite",
+  "glacium",
+  "cobaltium",
+  "cryolite",
+  "borealite",
+  "cryocrystal",
+  "aurorium",
 ];
 
 // Probabilité d'apparition par tuile, modélisée en gaussienne de la profondeur :
@@ -355,8 +487,9 @@ export const HULL_TIERS: Tier[] = [
   { name: "Einsteinium", price: 100000, stat: 1200 },
   { name: "Blindage énergétique", price: 500000, stat: 1800 },
 ];
-// réduction des dégâts de chute par palier de coque
-export const HULL_DMG_FACTOR = [1, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4];
+// réduction des dégâts de chute par palier de coque (8 entrées : la planète
+// gelée propose un palier de coque supplémentaire)
+export const HULL_DMG_FACTOR = [1, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.32];
 
 // stat = fraction des dégâts de lave absorbée (le Radiator de Motherload)
 export const RADIATOR_TIERS: Tier[] = [
@@ -406,14 +539,14 @@ export function digDepthFactor(depth: number): number {
   return 1 + Math.max(0, depth) * DIG_DEPTH_FACTOR;
 }
 
+// drillStat = multiplicateur de vitesse de la foreuse (palier de la planète active)
 export function digTime(
   kind: TileKind,
   depth: number,
-  drillTier: number,
+  drillStat: number,
 ): number {
   return (
-    (TILES[kind].hardness * DIG_BASE_TIME * digDepthFactor(depth)) /
-    DRILL_TIERS[drillTier].stat
+    (TILES[kind].hardness * DIG_BASE_TIME * digDepthFactor(depth)) / drillStat
   );
 }
 

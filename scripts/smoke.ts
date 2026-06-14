@@ -496,11 +496,92 @@ await page.click('.recall-btn', { force: true });
 await page.waitForTimeout(500);
 await page.keyboard.press('KeyE'); // passe la cinématique de départ
 await page.waitForTimeout(500);
-check((await page.locator('.modal.victory').count()) > 0, 'écran de victoire affiché');
-await page.click('button:has-text("Continuer")');
+check((await page.locator('.modal.victory').count()) > 0, 'écran de victoire affiché (XK-712)');
+check(
+  (await page.locator('.victory button:has-text("Embarquer")').count()) > 0,
+  'bouton « embarquer pour la planète suivante » affiché',
+);
+
+// ── Transition vers la planète gelée (remise à zéro) ──────────────────────
+const planetState = () =>
+  page.evaluate(() => {
+    const s = (window as any).__store.getState();
+    return {
+      ui: s.ui,
+      planet: s.planet,
+      money: s.money,
+      drill: s.upgrades.drill,
+      hull: s.hull,
+      cobaltium: s.cargo.cobaltium ?? 0,
+    };
+  });
+
+await page.locator('.victory button:has-text("Embarquer")').click();
 await page.waitForTimeout(400);
-s = await snap();
-check(s.ui === 'playing' && s.depth === 0, 'retour en jeu après la victoire');
+let fs = await planetState();
+check(
+  fs.planet === 'frost' && fs.money === 0 && fs.drill === 0,
+  `remise à zéro sur la planète gelée (planète=${fs.planet}, ${fs.money} $, foreuse niv.${fs.drill})`,
+);
+await page.keyboard.press('KeyE'); // saute la cinématique d'arrivée
+await page.waitForTimeout(500);
+check(
+  (await page.locator('.modal.story:has-text("Sialis")').count()) > 0,
+  'briefing de la planète gelée affiché',
+);
+await page.keyboard.press('Enter'); // commencer le forage
+await page.waitForTimeout(500);
+fs = await planetState();
+check(fs.ui === 'playing' && fs.planet === 'frost', 'forage commencé sur la planète gelée');
+
+// minerai de glace + poche de froid sous la foreuse
+await page.evaluate(() => {
+  const e = (window as any).__engine;
+  const col = Math.floor(e.player.x + e.player.w / 2);
+  for (let y = 1; y <= 4; y++) {
+    e.world.getTile(col, y);
+    e.world.rows.get(y)[col] = 'cobaltium';
+  }
+  e.world.getTile(col, 2);
+  e.world.rows.get(2)[col] = 'cold';
+});
+const hullBeforeCold = (await planetState()).hull;
+await holdUntil(page, 'ArrowDown', (st) => st.depth >= 3, 9000);
+fs = await planetState();
+check(fs.cobaltium > 0, `minerai de glace récolté (cobaltium ×${fs.cobaltium})`);
+check(fs.hull < hullBeforeCold, `la poche de froid gèle la coque (${hullBeforeCold.toFixed(0)} → ${fs.hull.toFixed(0)} PV)`);
+
+// dynamite : détruit un rocher de glace mais épargne la poche de froid
+const blast = await page.evaluate(() => {
+  const w = (window as any).__engine.world;
+  const col = 10;
+  const y = 30;
+  w.getTile(col, y);
+  w.rows.get(y)[col] = 'iceboulder';
+  w.getTile(col + 1, y);
+  w.rows.get(y)[col + 1] = 'cold';
+  w.blast(col + 0.5, y + 0.5, 2.2);
+  return { boulderGone: w.getTile(col, y) === 'empty', coldKept: w.getTile(col + 1, y) === 'cold' };
+});
+check(
+  blast.boulderGone && blast.coldKept,
+  'dynamite détruit le rocher de glace mais épargne la poche de froid',
+);
+
+// retour en surface via téléporteur, puis objectif (50 M$) → victoire finale
+await page.evaluate(() => (window as any).__store.setState({ teleporters: 1 }));
+await page.keyboard.press('KeyT');
+await page.waitForTimeout(600); // téléportation vers la surface
+await page.evaluate(() => (window as any).__store.setState({ money: 50_000_000 }));
+await page.evaluate(() => (window as any).__store.getState().recallRocket());
+await page.waitForTimeout(300);
+await page.keyboard.press('KeyE'); // saute la cinématique de départ
+await page.waitForTimeout(500);
+check((await page.locator('.modal.victory').count()) > 0, 'victoire sur la planète gelée');
+check(
+  (await page.locator('.victory button:has-text("Embarquer")').count()) === 0,
+  'dernière planète : pas de bouton « embarquer »',
+);
 
 check(errors.length === 0, `aucune erreur console${errors.length ? ` : ${errors.join(' | ')}` : ''}`);
 

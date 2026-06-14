@@ -1,8 +1,10 @@
 import type { OreId } from './constants';
+import type { PlanetId } from './planets';
 
 export interface SaveData {
   seed: number;
   dug: number[];
+  planet?: PlanetId; // planète courante (défaut 'xk712' pour les sauvegardes v1)
   money: number;
   fuel: number;
   hull: number;
@@ -13,7 +15,8 @@ export interface SaveData {
     hull: number;
     jetpack: number;
     cargo: number;
-    radiator?: number;
+    thermal?: number; // isolation thermique / radiateur (planète active)
+    radiator?: number; // sauvegardes v1 (migré vers thermal au chargement)
   };
   teleporters: number;
   dynamites: number;

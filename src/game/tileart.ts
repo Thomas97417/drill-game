@@ -14,8 +14,19 @@ const KINDS: TileKind[] = [
   'foundation',
   'boulder',
   'lava',
+  // tuiles structurelles de la planète gelée
+  'snow',
+  'ice',
+  'hardice',
+  'iceboulder',
+  'cold',
   ...ORE_IDS,
 ];
+
+// palettes froides réutilisées par la glace et ses minerais
+const ICE_TONES = ['#6d8295', '#84a0b4', '#9ab6c8', '#b0ccdc'];
+const HARDICE_TONES = ['#3a4a58', '#4c5e6e', '#5a6e7e', '#6a8090'];
+const DEEP_ICE_TONES = ['#1d2730', '#2a3742', '#36454f', '#42535f'];
 const P = 4; // taille du « gros pixel »
 const G = Math.ceil(TILE / P); // cellules par côté
 
@@ -132,6 +143,46 @@ function paintTile(ctx: CanvasRenderingContext2D, kind: TileKind, rng: Rng) {
     case 'amazonite':
       paintRock(ctx, rng, ['#1f1f27', '#2e2e38', '#3a3a45', '#46464f'], 5);
       paintAmazonite(ctx, rng);
+      break;
+    // ── Planète gelée ──
+    case 'snow':
+      paintSnow(ctx, rng);
+      break;
+    case 'ice':
+      paintRock(ctx, rng, ICE_TONES, 3);
+      break;
+    case 'hardice':
+      paintRock(ctx, rng, HARDICE_TONES, 5);
+      break;
+    case 'iceboulder':
+      paintIceBoulder(ctx, rng);
+      break;
+    case 'cold':
+      paintCold(ctx, rng);
+      break;
+    case 'glacium':
+      paintSnow(ctx, rng);
+      paintNuggets(ctx, rng, '#c3d2e0', '#8da0b4', '#eef5fb');
+      break;
+    case 'cobaltium':
+      paintRock(ctx, rng, ICE_TONES, 3);
+      paintNuggets(ctx, rng, '#4a78c8', '#27508f', '#9fc0f0');
+      break;
+    case 'cryolite':
+      paintRock(ctx, rng, ICE_TONES, 3);
+      paintCrystals(ctx, rng, '#7fe0e8', '#2f8f9c', '#d6f7fb');
+      break;
+    case 'borealite':
+      paintRock(ctx, rng, HARDICE_TONES, 4);
+      paintCrystals(ctx, rng, '#5fe39a', '#1f7a4f', '#bff5d6');
+      break;
+    case 'cryocrystal':
+      paintRock(ctx, rng, HARDICE_TONES, 4);
+      paintCrystals(ctx, rng, '#c8f0ff', '#5a93b0', '#f0ffff');
+      break;
+    case 'aurorium':
+      paintRock(ctx, rng, DEEP_ICE_TONES, 5);
+      paintAurorium(ctx, rng);
       break;
     default:
       break;
@@ -494,4 +545,139 @@ function paintCrystals(ctx: CanvasRenderingContext2D, rng: Rng, mid: string, dar
     ctx.fillRect(x - r * 0.5, y - r * 0.3, 3, 3);
     sparkle(ctx, x + r * 0.55, y - r * 0.55, 4, '#ffffff');
   }
+}
+
+// ── Planète gelée ────────────────────────────────────────────────────────────
+
+// Neige : blancs froids, éclats de glace, reflets bleutés (calque de paintDirt)
+function paintSnow(ctx: CanvasRenderingContext2D, rng: Rng) {
+  noiseFill(ctx, rng, ['#cdd9e6', '#dbe6f0', '#e9f1f8', '#f5fafe'], [0.2, 0.34, 0.3, 0.16]);
+  for (let i = 0; i < 3; i++) {
+    const cx = 1 + Math.floor(rng() * (G - 3));
+    const cy = 1 + Math.floor(rng() * (G - 3));
+    cell(ctx, cx, cy, '#a9bccd');
+    cell(ctx, cx + 1, cy, '#ffffff');
+  }
+  if (rng() < 0.5) {
+    let cx = Math.floor(rng() * G);
+    ctx.fillStyle = 'rgba(150,190,225,0.4)';
+    for (let cy = 0; cy < G; cy += 1) {
+      ctx.fillRect(Math.max(0, Math.min(G - 1, cx)) * P, cy * P, P, P);
+      if (rng() < 0.4) cx += rng() < 0.5 ? -1 : 1;
+    }
+  }
+}
+
+// Poche de froid : analogue glacé de la lave — veines de givre + bordure danger
+function paintCold(ctx: CanvasRenderingContext2D, rng: Rng) {
+  noiseFill(ctx, rng, ['#5fb0de', '#7fc2e6', '#9fd4ee', '#bfe6f5'], [0.22, 0.34, 0.3, 0.14]);
+  // veines de givre plus claires
+  for (let i = 0; i < 3; i++) {
+    let cx = Math.floor(rng() * G);
+    let cy = 1 + Math.floor(rng() * (G - 2));
+    for (let s = 0; s < 7; s++) {
+      cell(ctx, Math.max(0, Math.min(G - 1, cx)), Math.max(0, Math.min(G - 1, cy)), '#e6f6ff');
+      cx += rng() < 0.7 ? 1 : 0;
+      cy += rng() < 0.35 ? (rng() < 0.5 ? -1 : 1) : 0;
+      if (cx >= G) break;
+    }
+  }
+  // cristaux brillants
+  for (let i = 0; i < 5; i++) {
+    const cx = 1 + Math.floor(rng() * (G - 2));
+    const cy = 1 + Math.floor(rng() * (G - 2));
+    cell(ctx, cx, cy, '#ffffff');
+    ctx.fillStyle = '#d6f2ff';
+    ctx.fillRect(cx * P + 1, cy * P + 1, 2, 2);
+  }
+  // plaques de givre opaque
+  for (let i = 0; i < 3; i++) {
+    const cx = Math.floor(rng() * (G - 1));
+    const cy = Math.floor(rng() * (G - 1));
+    cell(ctx, cx, cy, '#3f86b0');
+    if (rng() < 0.5) cell(ctx, cx + 1, cy, '#357aa0');
+  }
+  // bordure de givre clair : le bloc se lit comme une case danger
+  ctx.fillStyle = 'rgba(210,240,255,0.85)';
+  ctx.fillRect(0, 0, TILE, 3);
+  ctx.fillRect(0, TILE - 3, TILE, 3);
+  ctx.fillRect(0, 0, 3, TILE);
+  ctx.fillRect(TILE - 3, 0, 3, TILE);
+}
+
+// Rocher de glace : galet bleu glacé ombré (calque de paintBoulder)
+function paintIceBoulder(ctx: CanvasRenderingContext2D, rng: Rng) {
+  noiseFill(ctx, rng, ['#0e1a22', '#13212b', '#182834'], [0.4, 0.4, 0.2]);
+  const cx0 = G / 2;
+  const cy0 = G / 2 + 0.5;
+  const rx = G * 0.46;
+  const ry = G * 0.42;
+  for (let cy = 0; cy < G; cy++) {
+    for (let cx = 0; cx < G; cx++) {
+      const dx = (cx + 0.5 - cx0) / rx;
+      const dy = (cy + 0.5 - cy0) / ry;
+      const d = dx * dx + dy * dy;
+      if (d > 1) continue;
+      const lit = -dx * 0.5 - dy * 0.7 + rng() * 0.25;
+      const tone = lit > 0.35 ? '#cfe2ef' : lit > 0 ? '#9ab6c8' : d > 0.6 ? '#516573' : '#6a8090';
+      cell(ctx, cx, cy, tone);
+    }
+  }
+  ctx.strokeStyle = 'rgba(40,70,90,0.6)';
+  ctx.lineWidth = 2;
+  for (let i = 0; i < 2; i++) {
+    ctx.beginPath();
+    ctx.moveTo(TILE * (0.3 + rng() * 0.3), TILE * (0.25 + rng() * 0.2));
+    ctx.lineTo(TILE * (0.4 + rng() * 0.3), TILE * (0.5 + rng() * 0.3));
+    ctx.stroke();
+  }
+}
+
+// Aurorium : minerai ultime de la planète gelée — prismes aurore (vert/cyan/
+// violet) sur halo lumineux (calque de paintAmazonite)
+function paintAurorium(ctx: CanvasRenderingContext2D, rng: Rng) {
+  const cx = TILE * (0.4 + rng() * 0.2);
+  const cy = TILE * (0.62 + rng() * 0.12);
+  const halo = ctx.createRadialGradient(cx, cy - 8, 2, cx, cy - 8, TILE * 0.62);
+  halo.addColorStop(0, 'rgba(92,255,208,0.5)');
+  halo.addColorStop(0.6, 'rgba(120,150,255,0.28)');
+  halo.addColorStop(1, 'rgba(120,150,255,0)');
+  ctx.fillStyle = halo;
+  ctx.fillRect(0, 0, TILE, TILE);
+  ctx.fillStyle = 'rgba(0,0,0,0.45)';
+  ctx.beginPath();
+  ctx.ellipse(cx, cy + 4, TILE * 0.3, 5, 0, 0, Math.PI * 2);
+  ctx.fill();
+  const faces: [string, string, string][] = [
+    ['#1c7a9c', '#46d6e0', '#bdfff2'],
+    ['#3a5fb0', '#7a8cff', '#d6e0ff'],
+    ['#1f8f6a', '#3fe0a0', '#bff5d6'],
+  ];
+  let fi = 0;
+  for (const a0 of [-0.55, -0.12, 0.32, 0.68]) {
+    const a = a0 + (rng() - 0.5) * 0.14;
+    const len = TILE * (0.3 + rng() * 0.16);
+    const wPr = 7 + rng() * 3;
+    const [dark, litc, tip] = faces[fi % faces.length];
+    fi++;
+    ctx.save();
+    ctx.translate(cx, cy);
+    ctx.rotate(a);
+    ctx.fillStyle = dark;
+    ctx.fillRect(-wPr / 2, -len, wPr, len);
+    ctx.fillStyle = litc;
+    ctx.fillRect(-wPr / 2, -len, wPr * 0.5, len);
+    ctx.fillStyle = tip;
+    ctx.beginPath();
+    ctx.moveTo(-wPr / 2, -len);
+    ctx.lineTo(wPr / 2, -len);
+    ctx.lineTo(0, -len - 7);
+    ctx.closePath();
+    ctx.fill();
+    ctx.fillStyle = 'rgba(255,255,255,0.8)';
+    ctx.fillRect(-wPr / 2, -len * (0.4 + rng() * 0.2), wPr, 2);
+    ctx.restore();
+  }
+  sparkle(ctx, cx + 8, cy - TILE * 0.34, 5, '#ffffff');
+  sparkle(ctx, cx - 11, cy - TILE * 0.16, 4, '#bff5ff');
 }

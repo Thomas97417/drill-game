@@ -11,11 +11,8 @@ import {
   FLY_ACCEL,
   GRAVITY,
   HULL_DMG_FACTOR,
-  JETPACK_TIERS,
-  LAVA_DPS,
   MAX_FALL,
   MAX_FLY,
-  RADIATOR_TIERS,
   ROCKET_X,
   MOVE_SPEED,
   SAFE_FALL_SPEED,
@@ -30,12 +27,13 @@ import {
   type BuildingId,
   type OreId,
 } from './constants';
+import { getPlanet } from './planets';
 import { Input } from './input';
 import { World } from './world';
 import { initTileAtlas } from './tileart';
 import { clearSave, loadSave, saveNow } from './save';
 import { maxCargoOf, useGameStore } from '../store';
-import { render } from './render';
+import { render, setActiveTheme } from './render';
 
 const STEP = 1 / 60;
 const EPS = 0.001;
@@ -150,6 +148,7 @@ export class Engine {
   private saveTimer = 0;
   private digPartTimer = 0;
   private smokeTimer = 0;
+  private snowTimer = 0;
   private wasPaused = false;
 
   constructor(canvas: HTMLCanvasElement) {
@@ -157,7 +156,9 @@ export class Engine {
     this.ctx = canvas.getContext('2d')!;
     initTileAtlas();
     const saved = loadSave();
-    this.world = new World(saved?.seed ?? newSeed(), saved?.dug);
+    const planet = saved?.planet ?? 'xk712';
+    setActiveTheme(getPlanet(planet).theme);
+    this.world = new World(saved?.seed ?? newSeed(), getPlanet(planet), saved?.dug);
     this.player = makePlayer(saved?.player);
     this.time = saved?.time ?? 0;
     this.snapCamera();
@@ -208,6 +209,7 @@ export class Engine {
   private update(dt: number) {
     this.time += dt;
     const store = useGameStore.getState();
+    const cfg = getPlanet(store.planet);
 
     if (store.pendingAction) {
       if (store.pendingAction === 'teleport') this.teleportToSurface();
@@ -218,6 +220,7 @@ export class Engine {
     }
 
     this.updateParticles(dt);
+    this.emitAmbient(dt);
     this.updateRocket(dt);
 
     if (store.ui !== 'playing') {
@@ -271,16 +274,21 @@ export class Engine {
         this.digging = {
           ...target,
           progress: 0,
-          total: digTime(this.world.getTile(target.x, target.y), target.y, store.upgrades.drill),
+          total: digTime(
+            this.world.getTile(target.x, target.y),
+            target.y,
+            cfg.ladders.drill[store.upgrades.drill].stat,
+          ),
         };
       }
       const d = this.digging;
       d.progress += dt;
-      // forer dans la lave brûle la coque (atténué par le radiateur)
-      if (this.world.getTile(d.x, d.y) === 'lava') {
-        const cooled = 1 - RADIATOR_TIERS[store.upgrades.radiator].stat;
-        hull = Math.max(0, hull - LAVA_DPS * cooled * HULL_DMG_FACTOR[store.upgrades.hull] * dt);
-        // flash continu pendant la brûlure, sans spammer de texte
+      // forer dans le danger thermique (lave / poche de froid) endommage la
+      // coque, atténué par le radiateur / l'isolation thermique
+      if (this.world.getTile(d.x, d.y) === cfg.hazard.kind) {
+        const reduce = 1 - cfg.ladders.thermal[store.upgrades.thermal].stat;
+        hull = Math.max(0, hull - cfg.hazard.dps * reduce * HULL_DMG_FACTOR[store.upgrades.hull] * dt);
+        // flash continu pendant les dégâts, sans spammer de texte
         this.hurtTimer = Math.max(this.hurtTimer, 0.2);
       }
       // forage vers le bas : la foreuse s'aligne sur la colonne attaquée.
@@ -309,13 +317,13 @@ export class Engine {
     } else {
       this.digging = null;
       // le moteur booste aussi la vitesse de déplacement
-      p.vx = ((right ? 1 : 0) - (left ? 1 : 0)) * MOVE_SPEED * JETPACK_TIERS[store.upgrades.jetpack].stat;
+      p.vx = ((right ? 1 : 0) - (left ? 1 : 0)) * MOVE_SPEED * cfg.ladders.jetpack[store.upgrades.jetpack].stat;
       if (p.vx !== 0) p.facing = p.vx > 0 ? 1 : -1;
     }
 
     // ── Verticale : jetpack + gravité ────────────────────────────────────────
     p.flying = up;
-    const flyMult = JETPACK_TIERS[store.upgrades.jetpack].stat;
+    const flyMult = cfg.ladders.jetpack[store.upgrades.jetpack].stat;
     p.vy += GRAVITY * dt;
     if (up) p.vy -= FLY_ACCEL * flyMult * dt;
     p.vy = Math.max(-MAX_FLY * flyMult, Math.min(MAX_FALL, p.vy));
@@ -532,9 +540,13 @@ export class Engine {
     this.emitBurst(p.x + p.w / 2, p.y + p.h / 2, '#7fe7f0', 16);
   }
 
+  // Réinitialise pour la planète courante du store (nouvelle partie OU départ
+  // vers la planète suivante) : nouveau monde, thème, et cinématique d'arrivée.
   private resetWorld() {
     clearSave();
-    this.world = new World(newSeed());
+    const planet = useGameStore.getState().planet;
+    setActiveTheme(getPlanet(planet).theme);
+    this.world = new World(newSeed(), getPlanet(planet));
     this.player = makePlayer();
     this.time = 0;
     this.digging = null;
@@ -736,6 +748,7 @@ export class Engine {
     saveNow({
       seed: this.world.seed,
       dug: [...this.world.dug],
+      planet: s.planet,
       money: s.money,
       fuel: s.fuel,
       hull: s.hull,
@@ -751,6 +764,29 @@ export class Engine {
   }
 
   // ── Particules ─────────────────────────────────────────────────────────────
+
+  // Neige ambiante de la planète gelée : flocons lents tombant en surface
+  private emitAmbient(dt: number) {
+    if (getPlanet(useGameStore.getState().planet).theme.particles !== 'snow') return;
+    if (this.camY > 6) return; // pas de neige en profondeur
+    this.snowTimer -= dt;
+    if (this.snowTimer > 0) return;
+    this.snowTimer = 0.04;
+    const wTiles = this.viewW / TILE;
+    for (let i = 0; i < 2; i++) {
+      this.particles.push({
+        x: this.camX + Math.random() * wTiles,
+        y: this.camY - 0.5,
+        vx: (Math.random() - 0.3) * 0.6,
+        vy: 1.2 + Math.random() * 1.3,
+        life: 4,
+        maxLife: 4,
+        color: `rgba(255,255,255,${0.5 + Math.random() * 0.4})`,
+        size: 2 + Math.random() * 3,
+        g: 0.02,
+      });
+    }
+  }
 
   private emitDigParticles(d: DigState, dt: number) {
     this.digPartTimer -= dt;

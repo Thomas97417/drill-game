@@ -1,33 +1,29 @@
 import {
-  BOULDER_MIN_DEPTH,
   BUILDINGS,
-  CAVE_MIN_DEPTH,
-  LAVA_MIN_DEPTH,
-  ORE_BANDS,
   TILES,
   WORLD_W,
-  boulderChance,
-  caveChance,
-  lavaChance,
   oreEnvelope,
   type TileDef,
   type TileKind,
 } from './constants';
+import type { PlanetConfig } from './planets';
 import { mulberry32 } from './rng';
 
 export class World {
   readonly seed: number;
+  readonly cfg: PlanetConfig;
   private rows = new Map<number, TileKind[]>();
   readonly dug = new Set<number>(); // clé = y * WORLD_W + x
 
-  constructor(seed: number, dug?: number[]) {
+  constructor(seed: number, cfg: PlanetConfig, dug?: number[]) {
     this.seed = seed;
+    this.cfg = cfg;
     if (dug) for (const k of dug) this.dug.add(k);
   }
 
   getTile(x: number, y: number): TileKind {
     if (y < 0) return 'empty';
-    if (x <= 0 || x >= WORLD_W - 1) return 'bedrock';
+    if (x <= 0 || x >= WORLD_W - 1) return this.cfg.terrain.bedrock;
     if (this.dug.has(y * WORLD_W + x)) return 'empty';
     return this.row(y)[x];
   }
@@ -45,13 +41,15 @@ export class World {
   }
 
   // Détruit tous les blocs dans le rayon (rochers compris, mais pas la
-  // roche-mère, les fondations ni la lave) ; renvoie les tuiles détruites
+  // roche-mère, les fondations ni le danger thermique) ; renvoie les tuiles détruites
   blast(cx: number, cy: number, radius: number): { x: number; y: number; kind: TileKind }[] {
     const destroyed: { x: number; y: number; kind: TileKind }[] = [];
+    const { bedrock, foundation } = this.cfg.terrain;
+    const hazard = this.cfg.hazard.kind;
     for (let ty = Math.max(0, Math.floor(cy - radius)); ty <= Math.ceil(cy + radius); ty++) {
       for (let tx = Math.floor(cx - radius); tx <= Math.ceil(cx + radius); tx++) {
         const kind = this.getTile(tx, ty);
-        if (kind === 'empty' || kind === 'bedrock' || kind === 'foundation' || kind === 'lava')
+        if (kind === 'empty' || kind === bedrock || kind === foundation || kind === hazard)
           continue;
         const dx = tx + 0.5 - cx;
         const dy = ty + 0.5 - cy;
@@ -73,43 +71,45 @@ export class World {
   }
 
   private generateRow(y: number): TileKind[] {
+    const cfg = this.cfg;
+    const t = cfg.terrain;
     const rng = mulberry32((this.seed ^ Math.imul(y + 1, 2654435761)) >>> 0);
     const row: TileKind[] = new Array(WORLD_W);
     for (let x = 0; x < WORLD_W; x++) {
       if (x <= 0 || x >= WORLD_W - 1) {
-        row[x] = 'bedrock';
+        row[x] = t.bedrock;
         continue;
       }
       if (y === 0) {
         // fondations indestructibles sous les bâtiments de surface
         const underBuilding = BUILDINGS.some(({ range }) => x >= range[0] && x <= range[1]);
-        row[x] = underBuilding ? 'foundation' : 'dirt';
+        row[x] = underBuilding ? t.foundation : t.soil;
         continue;
       }
       // grottes : poches de vide naturelles
-      if (y >= CAVE_MIN_DEPTH && rng() < caveChance(y)) {
+      if (y >= cfg.cave.minDepth && rng() < cfg.cave.chance(y)) {
         row[x] = 'empty';
         continue;
       }
       // rochers : seuls les explosifs en viennent à bout
-      if (y >= BOULDER_MIN_DEPTH && rng() < boulderChance(y)) {
-        row[x] = 'boulder';
+      if (y >= cfg.boulder.minDepth && rng() < cfg.boulder.chance(y)) {
+        row[x] = cfg.boulder.tile;
         continue;
       }
-      // poches de lave, de plus en plus fréquentes en profondeur
-      if (y >= LAVA_MIN_DEPTH && rng() < lavaChance(y)) {
-        row[x] = 'lava';
+      // danger thermique (lave / poches de froid), de plus en plus fréquent en profondeur
+      if (y >= cfg.hazard.minDepth && rng() < cfg.hazard.chance(y)) {
+        row[x] = cfg.hazard.kind;
         continue;
       }
       const hardChance = y > 120 ? Math.min(0.5, (y - 120) * 0.003) : 0;
       const rockChance = Math.min(0.8, 0.08 + y * 0.004);
       const r1 = rng();
       let kind: TileKind =
-        r1 < hardChance ? 'hardrock' : r1 < hardChance + rockChance ? 'rock' : 'dirt';
+        r1 < hardChance ? t.hardRock : r1 < hardChance + rockChance ? t.softRock : t.soil;
       // Minerai par-dessus la roche de base (abondance gaussienne en profondeur)
       const r2 = rng();
       let acc = 0;
-      for (const band of ORE_BANDS) {
+      for (const band of cfg.oreBands) {
         const env = oreEnvelope(band, y);
         if (env < 0.001) continue;
         acc += band.p * env;

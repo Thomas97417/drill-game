@@ -1,33 +1,32 @@
 import { fmt } from "../game/constants";
+import { getPlanet } from "../game/planets";
 import { useGameStore } from "../store";
 import { useArrowNav } from "./useArrowNav";
 
 export function Victory() {
   const ui = useGameStore((s) => s.ui);
+  const planet = useGameStore((s) => s.planet);
   const money = useGameStore((s) => s.money);
   const day = useGameStore((s) => s.day);
   const maxDepth = useGameStore((s) => s.maxDepth);
   const continueMining = useGameStore((s) => s.continueMining);
+  const boardForNextPlanet = useGameStore((s) => s.boardForNextPlanet);
   const newGame = useGameStore((s) => s.newGame);
 
   useArrowNav(ui === "victory");
 
   if (ui !== "victory") return null;
 
+  const cfg = getPlanet(planet);
+  const next = cfg.next ? getPlanet(cfg.next) : null;
+
   return (
     <div className="overlay">
       <div className="modal victory">
-        <h2>🚀 Dette remboursée !</h2>
-        <p>
-          La fusée s'arrache du sol de XK-712, et pour la première fois depuis
-          longtemps, ce n'est pas le compteur de carburant que vous regardez —
-          c'est le ciel.
-        </p>
-        <p>
-          La Compagnie Minière Trans-Stellaire « vous félicite pour votre
-          professionnalisme » et vous propose déjà un nouveau contrat. Vous
-          l'écouterez peut-être. Plus tard.
-        </p>
+        <h2>{cfg.victory.title}</h2>
+        {cfg.victory.paragraphs.map((p, i) => (
+          <p key={i}>{p}</p>
+        ))}
         <table className="sell-table victory-stats">
           <tbody>
             <tr>
@@ -35,7 +34,7 @@ export function Victory() {
               <td className="right gold">{fmt(money)} $</td>
             </tr>
             <tr>
-              <td>Jours sur XK-712</td>
+              <td>Jours sur {cfg.name}</td>
               <td className="right">{day}</td>
             </tr>
             <tr>
@@ -45,7 +44,12 @@ export function Victory() {
           </tbody>
         </table>
         <div className="btn-row">
-          <button className="btn btn-primary" onClick={continueMining}>
+          {next && (
+            <button className="btn btn-primary" onClick={boardForNextPlanet}>
+              {cfg.victory.boardLabel ?? `🚀 Embarquer pour ${next.name}`}
+            </button>
+          )}
+          <button className="btn" onClick={continueMining}>
             ⛏ Continuer l'exploitation
           </button>
           <button

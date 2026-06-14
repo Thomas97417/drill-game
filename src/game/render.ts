@@ -1,8 +1,17 @@
 import { BUILDINGS, DAY_CYCLE, FLOATER_LIFE, TILE, TILES, WORLD_W } from './constants';
+import { getPlanet, type PlanetTheme } from './planets';
 import { hash2D } from './rng';
 import { drawTileSprite } from './tileart';
 import { useGameStore } from '../store';
 import type { Engine } from './engine';
+
+// Thème de la planète active (palettes ciel/profondeur/collines/surface) :
+// posé par l'engine à la construction et à chaque changement de planète, pour
+// éviter une lecture du store à chaque frame.
+let activeTheme: PlanetTheme = getPlanet('xk712').theme;
+export function setActiveTheme(t: PlanetTheme) {
+  activeTheme = t;
+}
 
 export function render(e: Engine) {
   const ctx = e.ctx;
@@ -76,19 +85,11 @@ function mix(
 
 // ── Fond : ciel au-dessus de y=0, terre teintée selon la profondeur ──────────
 
-const DEPTH_TINTS: { d: number; c: [number, number, number] }[] = [
-  { d: 0, c: [48, 32, 18] },
-  { d: 80, c: [26, 34, 18] },
-  { d: 160, c: [18, 62, 32] },
-  { d: 300, c: [18, 38, 86] },
-  { d: 460, c: [56, 24, 90] },
-  { d: 640, c: [96, 20, 24] },
-];
-
 function depthTint(depth: number): [number, number, number] {
+  const tints = activeTheme.depthTints;
   const d = Math.max(0, depth);
-  let prev = DEPTH_TINTS[0];
-  for (const stop of DEPTH_TINTS) {
+  let prev = tints[0];
+  for (const stop of tints) {
     if (d <= stop.d) {
       const t = stop.d === prev.d ? 0 : (d - prev.d) / (stop.d - prev.d);
       return prev.c.map((v, i) => v + (stop.c[i] - v) * t) as [number, number, number];
@@ -130,10 +131,11 @@ function drawDecor(
   if (surfaceY <= 0) return; // surface hors écran
   const { dl, sunset } = day;
 
-  // ciel interpolé jour ↔ nuit, rougi à l'aube/au crépuscule
-  const top = mix(mix([6, 9, 26], [47, 126, 207], dl), [86, 60, 110], sunset * 0.45);
-  const mid = mix(mix([13, 19, 46], [116, 180, 232], dl), [205, 110, 90], sunset * 0.55);
-  const bot = mix(mix([28, 35, 68], [207, 232, 250], dl), [255, 150, 90], sunset * 0.7);
+  // ciel interpolé jour ↔ nuit, teinté à l'aube/au crépuscule (palette planète)
+  const sk = activeTheme.sky;
+  const top = mix(mix(sk.nightTop, sk.dayTop, dl), sk.sunsetTop, sunset * 0.45);
+  const mid = mix(mix(sk.nightMid, sk.dayMid, dl), sk.sunsetMid, sunset * 0.55);
+  const bot = mix(mix(sk.nightBot, sk.dayBot, dl), sk.sunsetBot, sunset * 0.7);
   const sky = ctx.createLinearGradient(0, surfaceY - TILE * 14, 0, surfaceY);
   sky.addColorStop(0, rgb(top));
   sky.addColorStop(0.55, rgb(mid));
@@ -203,11 +205,13 @@ function drawDecor(
   }
 
   // collines lointaines, assombries la nuit
-  drawHills(ctx, camPxX * 0.25, surfaceY, W, rgb(mix([16, 24, 34], [111, 158, 106], dl)), 2.6, 0);
-  drawHills(ctx, camPxX * 0.5, surfaceY, W, rgb(mix([11, 18, 26], [78, 127, 82], dl)), 1.7, 40);
+  const hn = activeTheme.hillsNear;
+  const hf = activeTheme.hillsFar;
+  drawHills(ctx, camPxX * 0.25, surfaceY, W, rgb(mix(hn.night, hn.day, dl)), 2.6, 0);
+  drawHills(ctx, camPxX * 0.5, surfaceY, W, rgb(mix(hf.night, hf.day, dl)), 1.7, 40);
 
   // nuages dérivants (ternis la nuit)
-  const cl = mix([150, 160, 185], [255, 255, 255], dl);
+  const cl = mix(activeTheme.cloudNight, activeTheme.cloudDay, dl);
   ctx.fillStyle = `rgba(${Math.round(cl[0])},${Math.round(cl[1])},${Math.round(cl[2])},${0.35 + dl * 0.5})`;
   for (const [base, cy, s, speed] of [
     [4, -6.4, 1, 0.18],
@@ -314,6 +318,21 @@ function drawTiles(
         ctx.globalCompositeOperation = 'source-over';
       }
 
+      // l'aurorium irradie une aura aurore (vert-violet) pulsante (additif)
+      if (kind === 'aurorium') {
+        const pulse = 0.5 + 0.5 * Math.sin(e.time * 3.2 + (x * 11 + y * 7) * 0.5);
+        const g = ctx.createRadialGradient(
+          px + TILE / 2, py + TILE / 2, 4,
+          px + TILE / 2, py + TILE / 2, TILE * 1.1,
+        );
+        g.addColorStop(0, `rgba(92,255,208,${0.16 + 0.14 * pulse})`);
+        g.addColorStop(1, 'rgba(92,255,208,0)');
+        ctx.globalCompositeOperation = 'lighter';
+        ctx.fillStyle = g;
+        ctx.fillRect(px - TILE * 0.6, py - TILE * 0.6, TILE * 2.2, TILE * 2.2);
+        ctx.globalCompositeOperation = 'source-over';
+      }
+
       // la lave palpite et irradie
       if (kind === 'lava') {
         const pulse = 0.5 + 0.5 * Math.sin(e.time * 2.6 + (x * 7 + y * 13) * 0.7);
@@ -329,8 +348,23 @@ function drawTiles(
         ctx.fillRect(px - TILE * 0.6, py - TILE * 0.6, TILE * 2.2, TILE * 2.2);
       }
 
-      // relief selon les voisins (pas pour le rocher, déjà détouré)
-      if (kind !== 'boulder') {
+      // la poche de froid scintille et diffuse une aura glaciale
+      if (kind === 'cold') {
+        const pulse = 0.5 + 0.5 * Math.sin(e.time * 2.6 + (x * 7 + y * 13) * 0.7);
+        ctx.fillStyle = `rgba(210,240,255,${0.05 + 0.12 * pulse})`;
+        ctx.fillRect(px, py, TILE, TILE);
+        const g = ctx.createRadialGradient(
+          px + TILE / 2, py + TILE / 2, TILE * 0.3,
+          px + TILE / 2, py + TILE / 2, TILE * 1.1,
+        );
+        g.addColorStop(0, `rgba(120,200,255,${0.1 + 0.1 * pulse})`);
+        g.addColorStop(1, 'rgba(120,200,255,0)');
+        ctx.fillStyle = g;
+        ctx.fillRect(px - TILE * 0.6, py - TILE * 0.6, TILE * 2.2, TILE * 2.2);
+      }
+
+      // relief selon les voisins (pas pour les rochers, déjà détourés)
+      if (kind !== 'boulder' && kind !== 'iceboulder') {
         const openAbove = e.world.getTile(x, y - 1) === 'empty' && y > 0;
         const openBelow = e.world.getTile(x, y + 1) === 'empty';
         const openLeft = e.world.getTile(x - 1, y) === 'empty';
@@ -355,9 +389,37 @@ function drawTiles(
         }
       }
 
-      // herbe de surface
+      // décor de surface : herbe (XK-712) ou neige (planète gelée)
       if (y === 0 && kind === 'dirt') drawGrass(ctx, x, px, py);
+      else if (y === 0 && kind === 'snow') drawSnowCap(ctx, x, px, py);
     }
+  }
+}
+
+function drawSnowCap(ctx: CanvasRenderingContext2D, x: number, px: number, py: number) {
+  const g = ctx.createLinearGradient(0, py, 0, py + 12);
+  g.addColorStop(0, '#ffffff');
+  g.addColorStop(1, '#d2e2f0');
+  ctx.fillStyle = g;
+  ctx.fillRect(px, py, TILE, 11);
+  // ourlet bleuté à la base de la couche de neige
+  ctx.fillStyle = '#b6cde0';
+  ctx.fillRect(px, py + 10, TILE, 3);
+  // petites bosses de neige soufflée
+  ctx.fillStyle = '#ffffff';
+  for (let i = 0; i < 3; i++) {
+    const bx = hash2D(x * 5 + i, 1, 23) * (TILE - 8);
+    const bw = 5 + hash2D(x * 3, i, 29) * 6;
+    ctx.beginPath();
+    ctx.ellipse(px + bx + bw / 2, py + 1, bw / 2, 4, 0, Math.PI, 0);
+    ctx.fill();
+  }
+  // éclat de glace occasionnel
+  if (hash2D(x, 9, 31) < 0.16) {
+    const fx = px + 6 + hash2D(x, 13, 37) * (TILE - 14);
+    ctx.fillStyle = '#9fd4ee';
+    ctx.fillRect(fx, py - 5, 2, 6);
+    ctx.fillRect(fx - 2, py - 3, 6, 2);
   }
 }
 
@@ -699,6 +761,8 @@ export const HULL_STYLES = [
   { dark: '#6e7e8e', mid: '#a8b8c8', light: '#e2ecf6', trim: null },
   { dark: '#2c1c46', mid: '#4a3270', light: '#7a5ab0', trim: '#c9a227' },
   { dark: '#161822', mid: '#2c3046', light: '#4a5070', trim: '#7fe7f0' },
+  // 8e palier (planète gelée) : coque quantique cryo
+  { dark: '#0e2230', mid: '#1f4a5e', light: '#3f86b0', trim: '#9beef8' },
 ] as const;
 
 // Réacteur dorsal par palier — palettes alignées sur HULL_STYLES :
@@ -712,6 +776,8 @@ export const JET_STYLES = [
   { body: '#a8b8c8', lite: '#e2ecf6', dark: '#5c6c7c', trim: null, nozzles: 2, scale: 1.27, flame: ['#ff9a3d', '#ffd166', '#fff6da'], glow: 'rgba(255,170,80,0.6)' },
   { body: '#4a3270', lite: '#7a5ab0', dark: '#241640', trim: '#c9a227', nozzles: 2, scale: 1.34, flame: ['#ff9a3d', '#ffd166', '#fff6da'], glow: 'rgba(255,170,80,0.6)' },
   { body: '#2c3046', lite: '#4a5070', dark: '#161822', trim: '#7fe7f0', nozzles: 2, scale: 1.4, flame: ['#3fc8de', '#9beef8', '#ffffff'], glow: 'rgba(127,231,240,0.6)' },
+  // 8e palier (planète gelée) : propulseur antigravité
+  { body: '#1a2c3a', lite: '#3f6b85', dark: '#0e1a22', trim: '#9beef8', nozzles: 2, scale: 1.46, flame: ['#9beef8', '#d6f7fb', '#ffffff'], glow: 'rgba(155,238,248,0.65)' },
 ] as const;
 
 // Trépan par palier : Standard, Acier, Carbure, Diamantée, Plasma
@@ -724,6 +790,8 @@ export const DRILL_STYLES = [
   { light: '#ffc4d0', mid: '#ef3b58', dark: '#a31432', tip: '#7a0e24', spires: 5, len: 0.62, glow: 'rgba(239,59,88,0.45)' },
   { light: '#e8fdff', mid: '#8deef7', dark: '#3aa8b8', tip: '#27828f', spires: 5, len: 0.66, glow: 'rgba(141,238,247,0.5)' },
   { light: '#d8fff7', mid: '#3fd9c2', dark: '#1b7f70', tip: '#125a4f', spires: 6, len: 0.7, glow: 'rgba(63,217,194,0.6)' },
+  // 8e palier (planète gelée) : désintégrateur cryo
+  { light: '#ecffff', mid: '#9beef8', dark: '#2f8f9c', tip: '#1b6470', spires: 6, len: 0.74, glow: 'rgba(155,238,248,0.7)' },
 ] as const;
 
 // ── Fusée de la Compagnie ────────────────────────────────────────────────────

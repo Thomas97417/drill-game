@@ -1,10 +1,21 @@
 import { useEffect, useRef } from 'react';
-import { TANK_TIERS } from '../game/constants';
+import type { Tier } from '../game/constants';
+import { getPlanet, type PlanetId } from '../game/planets';
 import { DRILL_STYLES, HULL_STYLES, JET_STYLES, fadedOut } from '../game/render';
 import type { UpgradeKind } from '../store';
 
 // Aperçu du palier d'amélioration, dessiné avec les styles de la machine
-export function UpgradeIcon({ kind, tier, size = 40 }: { kind: UpgradeKind; tier: number; size?: number }) {
+export function UpgradeIcon({
+  kind,
+  tier,
+  size = 40,
+  planet,
+}: {
+  kind: UpgradeKind;
+  tier: number;
+  size?: number;
+  planet: PlanetId;
+}) {
   const ref = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
@@ -14,11 +25,11 @@ export function UpgradeIcon({ kind, tier, size = 40 }: { kind: UpgradeKind; tier
     ctx.clearRect(0, 0, S, S);
     if (kind === 'drill') paintDrill(ctx, S, tier);
     else if (kind === 'hull') paintHull(ctx, S, tier);
-    else if (kind === 'tank') paintTank(ctx, S, tier);
+    else if (kind === 'tank') paintTank(ctx, S, tier, getPlanet(planet).ladders.tank);
     else if (kind === 'cargo') paintCargo(ctx, S, tier);
-    else if (kind === 'radiator') paintRadiator(ctx, S, tier);
+    else if (kind === 'thermal') paintRadiator(ctx, S, tier);
     else paintJet(ctx, S, tier);
-  }, [kind, tier, size]);
+  }, [kind, tier, size, planet]);
 
   return (
     <canvas
@@ -126,8 +137,8 @@ function paintHull(ctx: CanvasRenderingContext2D, S: number, tier: number) {
   }
 }
 
-function paintTank(ctx: CanvasRenderingContext2D, S: number, tier: number) {
-  const cap = TANK_TIERS[tier].stat / TANK_TIERS[TANK_TIERS.length - 1].stat;
+function paintTank(ctx: CanvasRenderingContext2D, S: number, tier: number, tank: Tier[]) {
+  const cap = tank[tier].stat / tank[tank.length - 1].stat;
   const x = S * 0.22;
   const y = S * 0.1;
   const w = S * 0.56;

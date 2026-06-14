@@ -1,21 +1,17 @@
 import { useEffect, useState } from "react";
 import {
-  CARGO_TIERS,
-  DRILL_TIERS,
   DYNAMITE_PRICE,
   FUEL_PRICE,
-  HULL_TIERS,
-  JETPACK_TIERS,
   ORE_IDS,
-  RADIATOR_TIERS,
   REPAIR_PRICE,
-  TANK_TIERS,
   TELEPORTER_PRICE,
   TILES,
   cargoLoad,
   cargoValue,
   fmt,
+  type Tier,
 } from "../game/constants";
+import { getPlanet } from "../game/planets";
 import {
   isBuilding,
   maxCargoOf,
@@ -30,49 +26,31 @@ import { OreWeight } from "./OreWeight";
 import { UpgradeIcon } from "./UpgradeIcon";
 import { useArrowNav } from "./useArrowNav";
 
-const UPGRADE_ROWS: {
+interface UpgradeRow {
   kind: UpgradeKind;
   title: string;
-  tiers: typeof DRILL_TIERS;
+  tiers: Tier[];
   statLabel: (s: number) => string;
-}[] = [
-  {
-    kind: "drill",
-    title: "Foreuse (vitesse)",
-    tiers: DRILL_TIERS,
-    statLabel: (s) => `×${s}`,
-  },
-  {
-    kind: "tank",
-    title: "Réservoir",
-    tiers: TANK_TIERS,
-    statLabel: (s) => `${s} L`,
-  },
-  {
-    kind: "hull",
-    title: "Coque",
-    tiers: HULL_TIERS,
-    statLabel: (s) => `${s} PV`,
-  },
-  {
-    kind: "jetpack",
-    title: "Moteur (vitesse & vol)",
-    tiers: JETPACK_TIERS,
-    statLabel: (s) => `×${s}`,
-  },
-  {
-    kind: "cargo",
-    title: "Soute (stockage)",
-    tiers: CARGO_TIERS,
-    statLabel: (s) => `${s} stockage`,
-  },
-  {
-    kind: "radiator",
-    title: "Radiateur (protection lave)",
-    tiers: RADIATOR_TIERS,
-    statLabel: (s) => `−${Math.round(s * 100)} %`,
-  },
-];
+}
+
+// Lignes d'amélioration de l'atelier, construites depuis les paliers de la
+// planète active (le slot « thermal » = radiateur ou isolation selon la planète)
+function upgradeRows(planet: ReturnType<typeof getPlanet>): UpgradeRow[] {
+  const L = planet.ladders;
+  return [
+    { kind: "drill", title: "Foreuse (vitesse)", tiers: L.drill, statLabel: (s) => `×${s}` },
+    { kind: "tank", title: "Réservoir", tiers: L.tank, statLabel: (s) => `${s} L` },
+    { kind: "hull", title: "Coque", tiers: L.hull, statLabel: (s) => `${s} PV` },
+    { kind: "jetpack", title: "Moteur (vitesse & vol)", tiers: L.jetpack, statLabel: (s) => `×${s}` },
+    { kind: "cargo", title: "Soute (stockage)", tiers: L.cargo, statLabel: (s) => `${s} stockage` },
+    {
+      kind: "thermal",
+      title: planet.thermalLabel.title,
+      tiers: L.thermal,
+      statLabel: planet.thermalLabel.statLabel,
+    },
+  ];
+}
 
 const TITLES = {
   sell: "Hôtel des ventes",
@@ -82,6 +60,7 @@ const TITLES = {
 
 export function Shop() {
   const ui = useGameStore((s) => s.ui);
+  const planet = useGameStore((s) => s.planet);
   const money = useGameStore((s) => s.money);
   const cargo = useGameStore((s) => s.cargo);
   const fuel = useGameStore((s) => s.fuel);
@@ -139,6 +118,7 @@ export function Shop() {
   const missingHull = maxHull - hull;
   const total = cargoValue(cargo);
   const cargoEntries = ORE_IDS.filter((id) => (cargo[id] ?? 0) > 0);
+  const UPGRADE_ROWS = upgradeRows(getPlanet(planet));
 
   return (
     <div className="overlay">
@@ -284,7 +264,7 @@ export function Shop() {
                     </div>
                   </div>
                   <div className="row-icon">
-                    {next && <UpgradeIcon kind={kind} tier={lvl + 1} />}
+                    {next && <UpgradeIcon kind={kind} tier={lvl + 1} planet={planet} />}
                   </div>
                   {next ? (
                     <HoldButton

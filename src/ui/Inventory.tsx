@@ -1,17 +1,6 @@
 import { useEffect } from "react";
-import {
-  CARGO_TIERS,
-  DRILL_TIERS,
-  HULL_TIERS,
-  JETPACK_TIERS,
-  ORE_IDS,
-  RADIATOR_TIERS,
-  TANK_TIERS,
-  TILES,
-  cargoLoad,
-  cargoValue,
-  fmt,
-} from "../game/constants";
+import { ORE_IDS, TILES, cargoLoad, cargoValue, fmt } from "../game/constants";
+import { getPlanet } from "../game/planets";
 import { maxCargoOf, useGameStore, type UpgradeKind } from "../store";
 import { OreIcon } from "./OreIcon";
 import { OreWeight } from "./OreWeight";
@@ -20,6 +9,7 @@ import { useArrowNav } from "./useArrowNav";
 
 export function Inventory() {
   const ui = useGameStore((s) => s.ui);
+  const planet = useGameStore((s) => s.planet);
   const money = useGameStore((s) => s.money);
   const cargo = useGameStore((s) => s.cargo);
   const upgrades = useGameStore((s) => s.upgrades);
@@ -44,42 +34,44 @@ export function Inventory() {
   if (!open) return null;
 
   const cargoEntries = ORE_IDS.filter((id) => (cargo[id] ?? 0) > 0);
+  const L = getPlanet(planet).ladders;
+  const thermalLabel = getPlanet(planet).thermalLabel.title.split(" (")[0];
   const gear = [
     {
       kind: "drill" as UpgradeKind,
       label: "Foreuse",
-      tier: DRILL_TIERS[upgrades.drill],
-      stat: `×${DRILL_TIERS[upgrades.drill].stat}`,
+      tier: L.drill[upgrades.drill],
+      stat: `×${L.drill[upgrades.drill].stat}`,
     },
     {
       kind: "tank" as UpgradeKind,
       label: "Réservoir",
-      tier: TANK_TIERS[upgrades.tank],
-      stat: `${TANK_TIERS[upgrades.tank].stat} L`,
+      tier: L.tank[upgrades.tank],
+      stat: `${L.tank[upgrades.tank].stat} L`,
     },
     {
       kind: "hull" as UpgradeKind,
       label: "Coque",
-      tier: HULL_TIERS[upgrades.hull],
-      stat: `${HULL_TIERS[upgrades.hull].stat} PV`,
+      tier: L.hull[upgrades.hull],
+      stat: `${L.hull[upgrades.hull].stat} PV`,
     },
     {
       kind: "jetpack" as UpgradeKind,
       label: "Moteur",
-      tier: JETPACK_TIERS[upgrades.jetpack],
-      stat: `×${JETPACK_TIERS[upgrades.jetpack].stat}`,
+      tier: L.jetpack[upgrades.jetpack],
+      stat: `×${L.jetpack[upgrades.jetpack].stat}`,
     },
     {
       kind: "cargo" as UpgradeKind,
       label: "Soute",
-      tier: CARGO_TIERS[upgrades.cargo],
-      stat: `${CARGO_TIERS[upgrades.cargo].stat} stockage`,
+      tier: L.cargo[upgrades.cargo],
+      stat: `${L.cargo[upgrades.cargo].stat} stockage`,
     },
     {
-      kind: "radiator" as UpgradeKind,
-      label: "Radiateur",
-      tier: RADIATOR_TIERS[upgrades.radiator],
-      stat: `−${Math.round(RADIATOR_TIERS[upgrades.radiator].stat * 100)} %`,
+      kind: "thermal" as UpgradeKind,
+      label: thermalLabel,
+      tier: L.thermal[upgrades.thermal],
+      stat: `−${Math.round(L.thermal[upgrades.thermal].stat * 100)} %`,
     },
   ];
 
@@ -143,7 +135,12 @@ export function Inventory() {
             {gear.map((g) => (
               <tr key={g.label}>
                 <td className="ore-cell">
-                  <UpgradeIcon kind={g.kind} tier={upgrades[g.kind]} size={34} />
+                  <UpgradeIcon
+                    kind={g.kind}
+                    tier={upgrades[g.kind]}
+                    size={34}
+                    planet={planet}
+                  />
                   {g.label}
                 </td>
                 <td>{g.tier.name}</td>

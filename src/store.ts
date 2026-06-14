@@ -1,16 +1,9 @@
 import { create } from 'zustand';
 import {
-  CARGO_TIERS,
-  MISSION_GOAL,
-  DRILL_TIERS,
   DYNAMITE_PRICE,
   FUEL_PRICE,
-  HULL_TIERS,
-  JETPACK_TIERS,
   ORE_IDS,
-  RADIATOR_TIERS,
   REPAIR_PRICE,
-  TANK_TIERS,
   TELEPORTER_PRICE,
   TILES,
   cargoLoad,
@@ -18,6 +11,7 @@ import {
   type BuildingId,
   type OreId,
 } from './game/constants';
+import { getPlanet, type PlanetId } from './game/planets';
 import { loadSave } from './game/save';
 
 export type UiMode =
@@ -32,7 +26,7 @@ export type UiMode =
 export type KeyboardLayout = 'azerty' | 'qwerty';
 export const isBuilding = (ui: UiMode): ui is BuildingId =>
   ui === 'sell' || ui === 'fuel' || ui === 'garage';
-export type UpgradeKind = 'drill' | 'tank' | 'hull' | 'jetpack' | 'cargo' | 'radiator';
+export type UpgradeKind = 'drill' | 'tank' | 'hull' | 'jetpack' | 'cargo' | 'thermal';
 
 export interface Upgrades {
   drill: number;
@@ -40,10 +34,11 @@ export interface Upgrades {
   hull: number;
   jetpack: number;
   cargo: number;
-  radiator: number;
+  thermal: number; // radiateur (lave) ou isolation thermique (froid) selon la planète
 }
 
 interface GameStore {
+  planet: PlanetId;
   money: number;
   fuel: number;
   hull: number;
@@ -59,7 +54,7 @@ interface GameStore {
   ui: UiMode;
   rescueReason: 'fuel' | 'hull';
   // ordre à consommer par le moteur de jeu
-  pendingAction: 'teleport' | 'newgame' | 'dynamite' | 'recall' | null;
+  pendingAction: 'teleport' | 'newgame' | 'dynamite' | 'recall' | 'nextplanet' | null;
 
   addCargo: (ore: OreId) => void;
   sellAll: () => void;
@@ -77,6 +72,7 @@ interface GameStore {
   toggleOptions: () => void;
   setLayout: (layout: KeyboardLayout) => void;
   recallRocket: () => void;
+  boardForNextPlanet: () => void;
   beginMission: () => void;
   continueMining: () => void;
   triggerRescue: (reason: 'fuel' | 'hull') => void;
@@ -85,43 +81,43 @@ interface GameStore {
   clearPending: () => void;
 }
 
-export const maxFuelOf = (u: Upgrades) => TANK_TIERS[u.tank].stat;
-export const maxHullOf = (u: Upgrades) => HULL_TIERS[u.hull].stat;
-export const maxCargoOf = (u: Upgrades) => CARGO_TIERS[u.cargo].stat;
-
-const TIERS = {
-  drill: DRILL_TIERS,
-  tank: TANK_TIERS,
-  hull: HULL_TIERS,
-  jetpack: JETPACK_TIERS,
-  cargo: CARGO_TIERS,
-  radiator: RADIATOR_TIERS,
-} as const;
+// Caps dérivés des paliers de la planète active
+export const maxFuelOf = (u: Upgrades) =>
+  getPlanet(useGameStore.getState().planet).ladders.tank[u.tank].stat;
+export const maxHullOf = (u: Upgrades) =>
+  getPlanet(useGameStore.getState().planet).ladders.hull[u.hull].stat;
+export const maxCargoOf = (u: Upgrades) =>
+  getPlanet(useGameStore.getState().planet).ladders.cargo[u.cargo].stat;
 
 const saved = loadSave();
 
-const freshState = () => ({
-  money: 0,
-  fuel: TANK_TIERS[0].stat,
-  hull: HULL_TIERS[0].stat,
-  cargo: {} as Partial<Record<OreId, number>>,
-  upgrades: { drill: 0, tank: 0, hull: 0, jetpack: 0, cargo: 0, radiator: 0 },
-  teleporters: 0,
-  dynamites: 0,
-  depth: 0,
-  maxDepth: 0,
-  day: 1,
-  layout: 'azerty' as KeyboardLayout,
-  nearBuilding: null as BuildingId | null,
-  ui: 'playing' as UiMode,
-  rescueReason: 'fuel' as const,
-  pendingAction: null,
-});
+const freshState = (planet: PlanetId = 'xk712') => {
+  const L = getPlanet(planet).ladders;
+  return {
+    planet,
+    money: 0,
+    fuel: L.tank[0].stat,
+    hull: L.hull[0].stat,
+    cargo: {} as Partial<Record<OreId, number>>,
+    upgrades: { drill: 0, tank: 0, hull: 0, jetpack: 0, cargo: 0, thermal: 0 },
+    teleporters: 0,
+    dynamites: 0,
+    depth: 0,
+    maxDepth: 0,
+    day: 1,
+    layout: 'azerty' as KeyboardLayout,
+    nearBuilding: null as BuildingId | null,
+    ui: 'playing' as UiMode,
+    rescueReason: 'fuel' as const,
+    pendingAction: null,
+  };
+};
 
 export const useGameStore = create<GameStore>((set) => ({
   ...freshState(),
   ...(saved
     ? {
+        planet: saved.planet ?? 'xk712',
         money: saved.money,
         fuel: saved.fuel,
         hull: saved.hull,
@@ -129,12 +125,15 @@ export const useGameStore = create<GameStore>((set) => ({
         cargo: Object.fromEntries(
           Object.entries(saved.cargo).filter(([k]) => (ORE_IDS as string[]).includes(k)),
         ),
-        // ?? 0 : sauvegardes antérieures à ces améliorations
+        // ?? 0 : sauvegardes antérieures à ces améliorations ;
+        // thermal reprend l'ancien radiateur des sauvegardes v1
         upgrades: {
-          ...saved.upgrades,
+          drill: saved.upgrades.drill ?? 0,
+          tank: saved.upgrades.tank ?? 0,
+          hull: saved.upgrades.hull ?? 0,
           jetpack: saved.upgrades.jetpack ?? 0,
           cargo: saved.upgrades.cargo ?? 0,
-          radiator: saved.upgrades.radiator ?? 0,
+          thermal: saved.upgrades.thermal ?? saved.upgrades.radiator ?? 0,
         },
         layout: saved.layout ?? ('azerty' as KeyboardLayout),
         teleporters: saved.teleporters,
@@ -188,7 +187,7 @@ export const useGameStore = create<GameStore>((set) => ({
 
   buyUpgrade: (kind) =>
     set((s) => {
-      const next = TIERS[kind][s.upgrades[kind] + 1];
+      const next = getPlanet(s.planet).ladders[kind][s.upgrades[kind] + 1];
       if (!next || s.money < next.price) return s;
       return {
         money: s.money - next.price,
@@ -249,10 +248,19 @@ export const useGameStore = create<GameStore>((set) => ({
   // objectif atteint : on rappelle la fusée de la Compagnie
   recallRocket: () =>
     set((s) =>
-      s.money >= MISSION_GOAL && s.ui === 'playing' && s.depth === 0
+      s.money >= getPlanet(s.planet).missionGoal && s.ui === 'playing' && s.depth === 0
         ? { pendingAction: 'recall' }
         : s,
     ),
+
+  // depuis l'écran de victoire : embarquer pour la planète suivante (remise à zéro)
+  boardForNextPlanet: () =>
+    set((s) => {
+      const next = getPlanet(s.planet).next;
+      return s.ui === 'victory' && next
+        ? { ...freshState(next), pendingAction: 'nextplanet' }
+        : s;
+    }),
 
   beginMission: () => set((s) => (s.ui === 'story' ? { ui: 'playing' } : s)),
 
