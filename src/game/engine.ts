@@ -765,25 +765,28 @@ export class Engine {
 
   // ── Particules ─────────────────────────────────────────────────────────────
 
-  // Neige ambiante de la planète gelée : flocons lents tombant en surface
+  // Blizzard de la planète gelée : flocons soufflés en diagonale par le vent
   private emitAmbient(dt: number) {
     if (getPlanet(useGameStore.getState().planet).theme.particles !== 'snow') return;
     if (this.camY > 6) return; // pas de neige en profondeur
     this.snowTimer -= dt;
     if (this.snowTimer > 0) return;
-    this.snowTimer = 0.04;
+    this.snowTimer = 0.025;
     const wTiles = this.viewW / TILE;
-    for (let i = 0; i < 2; i++) {
+    const hTiles = this.viewH / TILE;
+    const gust = 2.4 + Math.sin(this.time * 0.6) * 1.6; // rafales de vent
+    for (let i = 0; i < 3; i++) {
       this.particles.push({
-        x: this.camX + Math.random() * wTiles,
-        y: this.camY - 0.5,
-        vx: (Math.random() - 0.3) * 0.6,
-        vy: 1.2 + Math.random() * 1.3,
-        life: 4,
-        maxLife: 4,
+        // émis au-dessus et sur le bord droit (le vent pousse vers la gauche)
+        x: this.camX + Math.random() * (wTiles + 4) - 2,
+        y: this.camY - 0.5 + Math.random() * hTiles * 0.5,
+        vx: -(gust + Math.random() * 2),
+        vy: 1.4 + Math.random() * 1.8,
+        life: 3.5,
+        maxLife: 3.5,
         color: `rgba(255,255,255,${0.5 + Math.random() * 0.4})`,
         size: 2 + Math.random() * 3,
-        g: 0.02,
+        g: 0.03,
       });
     }
   }

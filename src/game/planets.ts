@@ -50,6 +50,8 @@ export interface PlanetTheme {
   depthTints: { d: number; c: RGB }[];
   surface: "grass" | "snow";
   particles: "none" | "snow";
+  // décor de surface : collines vertes + nuages, ou pics glacés + aurores + blizzard
+  decor: "temperate" | "frost";
 }
 
 export interface UpgradeLadders {
@@ -117,6 +119,7 @@ const XK712_THEME: PlanetTheme = {
   ],
   surface: "grass",
   particles: "none",
+  decor: "temperate",
 };
 
 const FROST_THEME: PlanetTheme = {
@@ -145,6 +148,7 @@ const FROST_THEME: PlanetTheme = {
   ],
   surface: "snow",
   particles: "snow",
+  decor: "frost",
 };
 
 // Paliers de la planète gelée : 8 niveaux, plus puissants et plus chers.

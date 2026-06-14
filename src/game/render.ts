@@ -156,6 +156,11 @@ function drawDecor(
     }
   }
 
+  // aurores boréales (planète gelée) — surtout marquées quand la nuit tombe
+  if (activeTheme.decor === 'frost') {
+    drawAurora(ctx, e, W, surfaceY, Math.max(0, 1 - dl * 1.25));
+  }
+
   // soleil sur son arc
   if (day.u >= -0.06 && day.u <= 1.06) {
     const pos = skyArc(day.u);
@@ -204,9 +209,15 @@ function drawDecor(
     }
   }
 
-  // collines lointaines, assombries la nuit
+  // relief lointain, assombri la nuit : collines tempérées ou pics glacés
   const hn = activeTheme.hillsNear;
   const hf = activeTheme.hillsFar;
+  if (activeTheme.decor === 'frost') {
+    drawIcePeaks(ctx, camPxX * 0.25, surfaceY, W, rgb(mix(hn.night, hn.day, dl)), 3, 0);
+    drawIcePeaks(ctx, camPxX * 0.5, surfaceY, W, rgb(mix(hf.night, hf.day, dl)), 2, 40);
+    drawBlizzard(ctx, e, W, surfaceY);
+    return;
+  }
   drawHills(ctx, camPxX * 0.25, surfaceY, W, rgb(mix(hn.night, hn.day, dl)), 2.6, 0);
   drawHills(ctx, camPxX * 0.5, surfaceY, W, rgb(mix(hf.night, hf.day, dl)), 1.7, 40);
 
@@ -226,6 +237,131 @@ function drawDecor(
     ctx.ellipse(px + TILE * 0.62 * s, py - TILE * 0.2 * s, TILE * 0.62 * s, TILE * 0.28 * s, 0, 0, Math.PI * 2);
     ctx.ellipse(px - TILE * 0.55 * s, py - TILE * 0.1 * s, TILE * 0.5 * s, TILE * 0.24 * s, 0, 0, Math.PI * 2);
     ctx.fill();
+  }
+}
+
+// Aurores boréales : rubans ondulants additifs (vert/cyan/violet) + stries verticales
+function drawAurora(
+  ctx: CanvasRenderingContext2D,
+  e: Engine,
+  W: number,
+  surfaceY: number,
+  intensity: number,
+) {
+  if (intensity <= 0.02) return;
+  const topBase = Math.max(0, surfaceY - TILE * 13);
+  const cols: [number, number, number][] = [
+    [60, 235, 150],
+    [70, 190, 255],
+    [165, 110, 255],
+  ];
+  ctx.save();
+  ctx.globalCompositeOperation = 'lighter';
+  for (let b = 0; b < 3; b++) {
+    const [r, g0, bl] = cols[b];
+    const baseY = topBase + b * TILE * 1.3 + Math.sin(e.time * 0.3 + b) * 8;
+    const amp = 14 + b * 7;
+    const speed = 0.45 + b * 0.13;
+    const bandH = TILE * (2.8 + b * 0.6);
+    const a = intensity * (0.3 - b * 0.05);
+    const grad = ctx.createLinearGradient(0, baseY - amp, 0, baseY + bandH);
+    grad.addColorStop(0, `rgba(${r},${g0},${bl},0)`);
+    grad.addColorStop(0.35, `rgba(${r},${g0},${bl},${a})`);
+    grad.addColorStop(1, `rgba(${r},${g0},${bl},0)`);
+    ctx.fillStyle = grad;
+    ctx.beginPath();
+    ctx.moveTo(0, baseY);
+    for (let x = 0; x <= W; x += 14) {
+      const y =
+        baseY +
+        Math.sin(x * 0.011 + e.time * speed + b) * amp +
+        Math.sin(x * 0.004 - e.time * speed * 0.6) * amp * 0.5;
+      ctx.lineTo(x, y);
+    }
+    for (let x = W; x >= 0; x -= 14) {
+      ctx.lineTo(x, baseY + bandH + Math.sin(x * 0.009 + e.time * speed * 0.8 + b) * amp);
+    }
+    ctx.closePath();
+    ctx.fill();
+  }
+  // fines stries verticales : effet « rideau »
+  for (let i = 0; i < 20; i++) {
+    const [r, g0, bl] = cols[i % 3];
+    const x = (i / 20) * W + Math.sin(e.time * 0.2 + i) * 6;
+    const h = TILE * (1.6 + hash2D(i, 1, 61) * 2.2);
+    const yy = topBase + Math.sin(x * 0.011 + e.time * 0.5) * 14;
+    const grad = ctx.createLinearGradient(0, yy, 0, yy + h);
+    grad.addColorStop(0, `rgba(${r},${g0},${bl},${intensity * 0.2})`);
+    grad.addColorStop(1, `rgba(${r},${g0},${bl},0)`);
+    ctx.fillStyle = grad;
+    ctx.fillRect(x, yy, 3, h);
+  }
+  ctx.restore();
+}
+
+// Pics glacés acérés à calotte neigeuse (remplacent les collines, en parallaxe)
+function drawIcePeaks(
+  ctx: CanvasRenderingContext2D,
+  scrollPx: number,
+  surfaceY: number,
+  W: number,
+  color: string,
+  height: number,
+  seed: number,
+) {
+  const step = TILE * 2.4;
+  const peakAt = (px: number) => {
+    const i = Math.floor((px + scrollPx) / step);
+    const h = (0.45 + hash2D(i, seed, 91) * 0.55) * height * TILE;
+    const base = px - (((scrollPx % step) + step) % step);
+    return { base, peakX: base + step / 2, h };
+  };
+  ctx.fillStyle = color;
+  ctx.beginPath();
+  ctx.moveTo(-step, surfaceY);
+  for (let px = -step; px <= W + step; px += step) {
+    const { base, peakX, h } = peakAt(px);
+    ctx.lineTo(base, surfaceY);
+    ctx.lineTo(peakX, surfaceY - h);
+  }
+  ctx.lineTo(W + step, surfaceY);
+  ctx.closePath();
+  ctx.fill();
+  // calottes neigeuses sur les sommets
+  ctx.fillStyle = 'rgba(238,245,252,0.92)';
+  for (let px = -step; px <= W + step; px += step) {
+    const { peakX, h } = peakAt(px);
+    const capW = h * 0.16;
+    const capH = h * 0.22;
+    ctx.beginPath();
+    ctx.moveTo(peakX - capW, surfaceY - h + capH);
+    ctx.lineTo(peakX, surfaceY - h);
+    ctx.lineTo(peakX + capW, surfaceY - h + capH);
+    ctx.closePath();
+    ctx.fill();
+  }
+}
+
+// Blizzard : stries de neige soufflées horizontalement par le vent
+function drawBlizzard(
+  ctx: CanvasRenderingContext2D,
+  e: Engine,
+  W: number,
+  surfaceY: number,
+) {
+  const H = Math.min(surfaceY, e.viewH);
+  const span = W + 260;
+  for (let i = 0; i < 26; i++) {
+    const speed = 220 + (i % 4) * 90;
+    const x = span - ((((e.time * speed + i * 137) % span) + span) % span);
+    const y = hash2D(i, 2, 41) * H;
+    const len = 24 + hash2D(i, 3, 47) * 50;
+    ctx.strokeStyle = `rgba(255,255,255,${0.05 + hash2D(i, 4, 53) * 0.07})`;
+    ctx.lineWidth = 1 + hash2D(i, 5, 59) * 1.5;
+    ctx.beginPath();
+    ctx.moveTo(x, y);
+    ctx.lineTo(x + len, y + len * 0.18);
+    ctx.stroke();
   }
 }
 
