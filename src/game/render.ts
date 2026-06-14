@@ -450,6 +450,42 @@ function drawGrass(ctx: CanvasRenderingContext2D, x: number, px: number, py: num
 
 // ── Bâtiments de surface ─────────────────────────────────────────────────────
 
+// Couche de neige bosselée posée sur une arête horizontale (base à y, bosses
+// au-dessus) — utilisée pour enneiger toits et auvents sur la planète gelée
+function snowCap(ctx: CanvasRenderingContext2D, x: number, y: number, w: number) {
+  ctx.fillStyle = '#f4f9ff';
+  ctx.beginPath();
+  ctx.moveTo(x, y + 3);
+  let bx = x;
+  while (bx < x + w) {
+    const nx = Math.min(bx + 13, x + w);
+    const peak = 4 + hash2D(Math.round(bx), 7, 71) * 5;
+    ctx.quadraticCurveTo((bx + nx) / 2, y - peak, nx, y);
+    bx = nx;
+  }
+  ctx.lineTo(x + w, y + 3);
+  ctx.closePath();
+  ctx.fill();
+  ctx.fillStyle = 'rgba(180,205,228,0.6)';
+  ctx.fillRect(x, y + 1, w, 2);
+}
+
+// Stalactites de glace sous une corniche
+function icicles(ctx: CanvasRenderingContext2D, x: number, y: number, w: number) {
+  ctx.fillStyle = 'rgba(222,240,255,0.92)';
+  const n = Math.max(2, Math.floor(w / 20));
+  for (let i = 0; i < n; i++) {
+    const ix = x + 8 + (w - 14) * (i / Math.max(1, n - 1)) + hash2D(i, 3, 73) * 3;
+    const len = 5 + hash2D(i, 5, 79) * 9;
+    ctx.beginPath();
+    ctx.moveTo(ix - 3, y);
+    ctx.lineTo(ix + 3, y);
+    ctx.lineTo(ix, y + len);
+    ctx.closePath();
+    ctx.fill();
+  }
+}
+
 function drawBuildings(
   ctx: CanvasRenderingContext2D,
   camPxX: number,
@@ -460,6 +496,7 @@ function drawBuildings(
   const sy = (y: number) => y * TILE - camPxY;
   if (sy(0) < -TILE * 4) return;
   const groundY = sy(0);
+  const snowy = activeTheme.surface === 'snow';
 
   // petits props
   drawLampPost(ctx, sx(7) - 8, groundY, day.dl);
@@ -512,6 +549,19 @@ function drawBuildings(
       }
       ctx.fillStyle = '#6d4c41';
       ctx.fillRect(x + w * 0.72, groundY - h - TILE * 0.78, 12, TILE * 0.5);
+      // neige sur le toit + stalactites sous la corniche (planète gelée)
+      if (snowy) {
+        ctx.strokeStyle = '#f4f9ff';
+        ctx.lineWidth = 7;
+        ctx.lineJoin = 'round';
+        ctx.lineCap = 'round';
+        ctx.beginPath();
+        ctx.moveTo(x - 11, groundY - h - 3);
+        ctx.lineTo(x + w / 2, groundY - h - TILE * 0.95 - 3);
+        ctx.lineTo(x + w + 11, groundY - h - 3);
+        ctx.stroke();
+        icicles(ctx, x, groundY - h, w);
+      }
       drawSign(ctx, x + w / 2, groundY - h + 24, 'VENTE', '#ffd54f');
     } else if (id === 'fuel') {
       // auvent rayé
@@ -552,6 +602,11 @@ function drawBuildings(
       ctx.beginPath();
       ctx.ellipse(x + w * 0.3, groundY - 3, 20, 4, 0, 0, Math.PI * 2);
       ctx.fill();
+      // neige sur l'auvent + stalactites (planète gelée)
+      if (snowy) {
+        snowCap(ctx, x - 8, roofY, w + 16);
+        icicles(ctx, x - 8, roofY + 17, w + 16);
+      }
       drawSign(ctx, x + w / 2, roofY - 12, 'ESSENCE', '#ff7675');
     } else {
       // atelier en béton
@@ -596,6 +651,11 @@ function drawBuildings(
       ctx.fillRect(x + w * 0.7, groundY - h + 14, 26, 14);
       ctx.fillStyle = '#28303a';
       for (let i = 0; i < 3; i++) ctx.fillRect(x + w * 0.7 + 3, groundY - h + 17 + i * 4, 20, 2);
+      // neige sur le toit plat + stalactites (planète gelée)
+      if (snowy) {
+        snowCap(ctx, x - 10, groundY - h - 12, w + 20);
+        icicles(ctx, x - 10, groundY - h + 2, w + 20);
+      }
       drawSign(ctx, x + w / 2, groundY - h + 18, 'ATELIER', '#7fd0ff');
     }
   }
@@ -620,9 +680,12 @@ function drawLampPost(ctx: CanvasRenderingContext2D, x: number, groundY: number,
   ctx.beginPath();
   ctx.arc(x + 16, groundY - TILE * 1.9 + 8, 5, 0, Math.PI * 2);
   ctx.fill();
+  // capuchon de neige sur la traverse (planète gelée)
+  if (activeTheme.surface === 'snow') snowCap(ctx, x - 1, groundY - TILE * 1.9, 18);
 }
 
 function drawCrates(ctx: CanvasRenderingContext2D, x: number, groundY: number) {
+  const snowy = activeTheme.surface === 'snow';
   for (const [dx, dy, s] of [
     [0, 0, 22],
     [24, 0, 18],
@@ -637,6 +700,7 @@ function drawCrates(ctx: CanvasRenderingContext2D, x: number, groundY: number) {
     ctx.moveTo(x + dx, groundY - s + dy);
     ctx.lineTo(x + dx + s, groundY + dy);
     ctx.stroke();
+    if (snowy) snowCap(ctx, x + dx, groundY - s + dy, s);
   }
 }
 

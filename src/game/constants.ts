@@ -43,6 +43,7 @@ export type TileKind =
   | "ice"
   | "hardice"
   | "iceboulder"
+  | "icefoundation"
   | "cold"
   | OreId;
 
@@ -156,6 +157,15 @@ export const TILES: Record<TileKind, TileDef> = {
     diggable: false,
     base: "#6e8290",
     speckle: "#52636f",
+  },
+  // dalle gelée sous les bâtiments (indestructible), accordée aux blocs de glace
+  icefoundation: {
+    name: "Fondations gelées",
+    hardness: 0,
+    solid: true,
+    diggable: false,
+    base: "#a8bccd",
+    speckle: "#8497a9",
   },
   cold: {
     name: "Poche de froid",

@@ -309,7 +309,7 @@ export const PLANETS: Record<PlanetId, PlanetConfig> = {
       softRock: "ice",
       hardRock: "hardice",
       bedrock: "bedrock",
-      foundation: "foundation",
+      foundation: "icefoundation",
     },
     ladders: {
       drill: FROST_DRILL,

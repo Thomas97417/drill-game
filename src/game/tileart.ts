@@ -19,6 +19,7 @@ const KINDS: TileKind[] = [
   'ice',
   'hardice',
   'iceboulder',
+  'icefoundation',
   'cold',
   ...ORE_IDS,
 ];
@@ -156,6 +157,9 @@ function paintTile(ctx: CanvasRenderingContext2D, kind: TileKind, rng: Rng) {
       break;
     case 'iceboulder':
       paintIceBoulder(ctx, rng);
+      break;
+    case 'icefoundation':
+      paintIceFoundation(ctx, rng);
       break;
     case 'cold':
       paintCold(ctx, rng);
@@ -565,6 +569,31 @@ function paintSnow(ctx: CanvasRenderingContext2D, rng: Rng) {
       ctx.fillRect(Math.max(0, Math.min(G - 1, cx)) * P, cy * P, P, P);
       if (rng() < 0.4) cx += rng() < 0.5 ? -1 : 1;
     }
+  }
+}
+
+// Fondations gelées : dalle de béton givré, joints et boulons givrés — assortie
+// aux blocs de glace plutôt qu'au béton gris de XK-712
+function paintIceFoundation(ctx: CanvasRenderingContext2D, rng: Rng) {
+  noiseFill(ctx, rng, ['#8ea3b5', '#9db1c2', '#aec1d1', '#c2d4e2'], [0.2, 0.36, 0.3, 0.14]);
+  // joints givrés
+  ctx.fillStyle = 'rgba(70,92,112,0.6)';
+  ctx.fillRect(0, Math.floor(G / 2) * P, TILE, 2);
+  ctx.fillRect(Math.floor(G / 2) * P, 0, 2, Math.floor(G / 2) * P);
+  ctx.fillRect(Math.floor(G / 4) * P, Math.floor(G / 2) * P, 2, TILE);
+  // givre clair le long des joints
+  ctx.fillStyle = 'rgba(235,246,255,0.5)';
+  ctx.fillRect(0, Math.floor(G / 2) * P - 1, TILE, 1);
+  // boulons givrés
+  for (const [bx, by] of [
+    [1, 1],
+    [G - 2, 1],
+    [1, G - 2],
+    [G - 2, G - 2],
+  ]) {
+    cell(ctx, bx, by, '#5f7589');
+    ctx.fillStyle = '#e6f2ff';
+    ctx.fillRect(bx * P + 1, by * P + 1, 2, 2);
   }
 }
 
