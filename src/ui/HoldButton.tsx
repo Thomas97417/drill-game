@@ -63,12 +63,14 @@ export function HoldButton({
       let p =
         progRef.current + (filling ? dt / fillRef.current : -dt / drainRef.current);
       if (p >= 1) {
-        // validation : déclenche, affiche le plein une frame puis snap à 0
+        // validation : déclenche et revient aussitôt à l'état initial — pas de
+        // vidage progressif, même si on relâche pile au moment du tir
         firedRef.current = true;
         confirmRef.current();
-        progRef.current = 1;
-        setProgress(1);
-        raf = requestAnimationFrame(tick);
+        progRef.current = 0;
+        setProgress(0);
+        raf = 0;
+        last = 0;
         return;
       }
       if (p < 0) p = 0;
